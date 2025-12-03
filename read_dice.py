@@ -39,7 +39,7 @@ def blur_image(image):
     # Apply Gaussian blur to reduce noise
     blurred = cv2.GaussianBlur(gray, (1, 1), 0)
     # Apply adaptive threshold to get binary image
-    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,51, 10)
+    _, thresh = cv2.threshold(blurred, 100, 255, cv2.THRESH_BINARY_INV)
     # Save threshold image for debugging
     cv2.imwrite("dice_threshold.jpg", thresh)
     print("Saved processed image: dice_threshold.jpg")
