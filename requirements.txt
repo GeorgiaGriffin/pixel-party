@@ -1,3 +1,5 @@
 # sudo apt install
+
+# for detecting dice val
 python3-opencv
 python3-picamera2
