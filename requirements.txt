@@ -7,3 +7,4 @@ python3-picamera2
 # For dice val detection in C++
 libopencv-dev
 libcamera-dev
+liblgpio-dev

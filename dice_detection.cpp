@@ -7,9 +7,24 @@
 #include <vector>
 #include <cmath>
 
+#include <lgpio.h>
 
 const bool TESTING = true;
 
+const int LED_PIN = 17;
+int gpio_handle;
+
+void initLED() {
+    gpio_handle = lgGpiochipOpen(0);
+    lgGpioClaimOutput(gpio_handle, 0, LED_PIN, 0);
+    lgGpioWrite(gpio_handle, LED_PIN, 1);
+}
+
+void cleanupLED() {
+    lgGpioWrite(gpio_handle, LED_PIN, 0);
+    lgGpiochipClose(gpio_handle);
+    exit(0);
+}
 
 int detectDiceVal() {
     // ---------- CAPTURE IMAGE ----------
@@ -41,7 +56,7 @@ int detectDiceVal() {
     cv::GaussianBlur(thresh, thresh, cv::Size(3, 3), 0);
 
     // Apply threshold (third is threshold value, adjust as needed, lower for more black)
-    cv::threshold(thresh, thresh, 20, 255, cv::THRESH_BINARY_INV);
+    cv::threshold(thresh, thresh, 30, 255, cv::THRESH_BINARY_INV);
 
     if (TESTING) {
         cv::imwrite("dice_threshold.jpg", thresh);
@@ -103,7 +118,7 @@ int detectDiceVal() {
             std::cout << "ERROR: detected invalid dice value" << std::endl;
         }
         std::cout << "\nDice value detected: " << diceVal << std::endl;
-    }    
+    }
 
     return diceVal;
 }
@@ -283,9 +298,10 @@ public:
 };
 
 
-
 int main() {
     // ------- Test DiceRollDetector -------
+    initLED();
+
     try {
         DiceRollDetector detector;
         cv::Mat diceFrame;
@@ -295,14 +311,17 @@ int main() {
             // Detect dice val now          
             std::cout << "\n=== Dice Roll Detection Complete ===" << std::endl;
             int dice_val = detectDiceVal();
-            std::cout << "\nDots detected: " << dice_val << std::endl;
+            std::cout << "\nDice detected: " << dice_val << std::endl;
         } else {
             std::cerr << "Failed to detect dice roll" << std::endl;
+            cleanupLED();
             return 1;
         }
 
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
+        
+        cleanupLED();
         return 1;
     }
 
@@ -313,5 +332,6 @@ int main() {
     //     return 1;
     // }
 
+    cleanupLED();
     return 0;
 }
