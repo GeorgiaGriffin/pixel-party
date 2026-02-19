@@ -8,6 +8,7 @@
 #include <cmath>
 
 #include <lgpio.h>
+#include <csignal>
 
 const bool TESTING = true;
 
@@ -23,6 +24,10 @@ void initLED() {
 void cleanupLED() {
     lgGpioWrite(gpio_handle, LED_PIN, 0);
     lgGpiochipClose(gpio_handle);
+}
+
+void signalHandler(int signal) {
+    cleanupLED();
     exit(0);
 }
 
@@ -56,7 +61,7 @@ int detectDiceVal() {
     cv::GaussianBlur(thresh, thresh, cv::Size(3, 3), 0);
 
     // Apply threshold (third is threshold value, adjust as needed, lower for more black)
-    cv::threshold(thresh, thresh, 30, 255, cv::THRESH_BINARY_INV);
+    cv::threshold(thresh, thresh, 40, 255, cv::THRESH_BINARY_INV);
 
     if (TESTING) {
         cv::imwrite("dice_threshold.jpg", thresh);
@@ -160,7 +165,8 @@ private:
     }
 
 public:
-    DiceRollDetector() {        
+    DiceRollDetector() {
+        std::cout << "About to capture test frame..." << std::endl;     
         cv::Mat testFrame;
         if (!captureFrame(testFrame)) {
             std::cerr << "ERROR: Cannot capture frames!" << std::endl;
@@ -300,6 +306,8 @@ public:
 
 int main() {
     // ------- Test DiceRollDetector -------
+    signal(SIGINT, signalHandler);
+    signal(SIGTERM, signalHandler);
     initLED();
 
     try {
