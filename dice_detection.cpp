@@ -17,11 +17,14 @@ int gpio_handle;
 
 void initLED() {
     gpio_handle = lgGpiochipOpen(0);
+    int PWM_FREQUENCY = 1000;  // Hz
+    float BRIGHTNESS = 20.0;   // 0.0 to 100.0 (percent duty cycle)
     lgGpioClaimOutput(gpio_handle, 0, LED_PIN, 0);
-    lgGpioWrite(gpio_handle, LED_PIN, 1);
+    lgTxPwm(gpio_handle, LED_PIN, PWM_FREQUENCY, BRIGHTNESS, 0, 0);
 }
 
 void cleanupLED() {
+    lgTxPwm(gpio_handle, LED_PIN, 0, 0, 0, 0);  // stop PWM
     lgGpioWrite(gpio_handle, LED_PIN, 0);
     lgGpiochipClose(gpio_handle);
 }
@@ -32,40 +35,23 @@ void signalHandler(int signal) {
 }
 
 int detectDiceVal() {
-    // ---------- CAPTURE IMAGE ----------
-    // Use rpicam-still to capture image
-    // -t 0 for immediate capture, or use small value like -t 100 for minimal auto-adjustment
-    int result = system("rpicam-still -o dice_original.jpg -t 100 --width 1920 --height 1080 --immediate");
-    
-    if (result != 0) {
-        std::cerr << "Error: Failed to capture image with rpicam-still" << std::endl;
-        return -1;
-    }
+    // ---------- LOAD IMAGE ----------
+    cv::Mat thresh = cv::imread("dice_original.jpg", cv::IMREAD_GRAYSCALE);
 
-    cv::Mat orig_image = cv::imread("dice_original.jpg");
-
-    if (orig_image.empty()) {
+    if (thresh.empty()) {
         std::cerr << "Error: Failed to load captured image" << std::endl;
         return -1;
     }
-
-    if (TESTING) {
-        std::cout << "Saved original image: dice_original.jpg" << std::endl;
-    }
-
-    cv::Mat thresh;
-    thresh = cv::imread("dice_original.jpg", cv::IMREAD_GRAYSCALE);
 
     // ---------- EDIT IMAGE ----------
     // Apply Gaussian blur to reduce noise
     cv::GaussianBlur(thresh, thresh, cv::Size(3, 3), 0);
 
     // Apply threshold (third is threshold value, adjust as needed, lower for more black)
-    cv::threshold(thresh, thresh, 40, 255, cv::THRESH_BINARY_INV);
+    cv::threshold(thresh, thresh, 65, 255, cv::THRESH_BINARY_INV);
 
     if (TESTING) {
         cv::imwrite("dice_threshold.jpg", thresh);
-        std::cout << "Saved processed image: dice_threshold.jpg" << std::endl;
     }
 
     // ---------- PROCESS IMAGE ----------
@@ -75,10 +61,10 @@ int detectDiceVal() {
     // Filter by area
     params.filterByArea = true;
     params.minArea = 100;
-    params.maxArea = 100000;
+    params.maxArea = 1000;
     // Filter by circularity
     params.filterByCircularity = true;
-    params.minCircularity = 0.6;
+    params.minCircularity = 0.7;
     // Filter by color
     params.filterByColor = true;
     params.blobColor = 255; // white blobs
@@ -108,6 +94,7 @@ int detectDiceVal() {
     }
 
     if (TESTING) {
+        cv::Mat orig_image = cv::imread("dice_original.jpg");
         cv::Mat frameWithDots = orig_image.clone();
         // Draw circles around detected dots
         for (const auto& kp : keypoints) {
@@ -117,13 +104,12 @@ int detectDiceVal() {
             cv::circle(frameWithDots, cv::Point(x, y), radius, cv::Scalar(0, 255, 0), 5);
         }
         cv::imwrite("dice_detected.jpg", frameWithDots);
-        std::cout << "Saved detection image: dice_detected.jpg" << std::endl;
         std::cout << "\nDots detected: " << numDots << std::endl;
         if (numDots < 1 || numDots > 6) {
             std::cout << "ERROR: detected invalid dice value" << std::endl;
         }
-        std::cout << "\nDice value detected: " << diceVal << std::endl;
     }
+    std::cout << "\nDice value detected: " << diceVal << std::endl;
 
     return diceVal;
 }
@@ -140,7 +126,7 @@ private:
     // Capture a frame using rpicam-still
     bool captureFrame(cv::Mat& frame) {
         // Set lower resolution so it goes faster
-        system("rpicam-still -o /tmp/frame.jpg --width 640 --height 480 --timeout 100 --nopreview 2>/dev/null");
+        system("rpicam-still -o /tmp/frame.jpg --width 800 --height 800 --mode 2304:1296 --timeout 100 --nopreview 2>/dev/null");
         frame = cv::imread("/tmp/frame.jpg");
         return !frame.empty();
     }
@@ -166,13 +152,11 @@ private:
 
 public:
     DiceRollDetector() {
-        std::cout << "About to capture test frame..." << std::endl;     
         cv::Mat testFrame;
         if (!captureFrame(testFrame)) {
             std::cerr << "ERROR: Cannot capture frames!" << std::endl;
             throw std::runtime_error("Camera failed");
         }
-        std::cout << "Camera works!" << std::endl;
     }
 
     /**
@@ -184,10 +168,9 @@ public:
      * 3. DICE_SETTLING: Dice has landed, checking for stability
      * 4. DICE_STABLE: Dice is stable and ready for detection
      * 
-     * @param capturedFrame Output parameter - the stable frame to analyze
-     * @return true if roll detected and dice is stable, false if timeout or error
+     * @return dice roll 1-6 if roll detected, -1 if timeout or error
      */
-    bool detectDiceRoll(cv::Mat& capturedFrame) {
+    int detectDiceRoll() {
         // Define states
         enum State { 
             WAITING_FOR_PICKUP,  // State 0: Waiting for initial motion
@@ -207,18 +190,18 @@ public:
         std::cout << "\n=== Starting Dice Roll Detection ===" << std::endl;
         if (!captureFrame(previousFrame)) {
             std::cerr << "ERROR: Failed to capture initial frame!" << std::endl;
-            return false;
+            return -1;
         }
 
         std::cout << "\n[STATE: WAITING_FOR_PICKUP]" << std::endl;
-        std::cout << "Pick up the dice\n" << std::endl;
+        std::cout << "  Pick up the dice\n" << std::endl;
 
         // Main state machine loop
         while (totalFrameCount < MAX_WAIT_FRAMES) {
             // Capture current frame
             if (!captureFrame(currentFrame)) {
                 std::cerr << "Failed to capture frame " << totalFrameCount << std::endl;
-                return false;
+                return -1;
             }
             
             // Calculate motion
@@ -272,8 +255,6 @@ public:
                             std::cout << "\n[STATE: DICE_STABLE]" << std::endl;
                             std::cout << "  Dice is stable! Ready for detection.\n" << std::endl;
                             currentState = DICE_STABLE;
-                            capturedFrame = currentFrame.clone();
-                            return true;
                         }
                     } else {
                         // Dice moved again!
@@ -285,8 +266,10 @@ public:
                     break;
                     
                 case DICE_STABLE:
-                    // Should not reach here (we return in DICE_SETTLING)
-                    break;
+                    // Call detect dice value
+                    cv::imwrite("dice_original.jpg", currentFrame);
+                    int dice_val = detectDiceVal();
+                    return dice_val;
             }
 
             // Update previous frame for next iteration
@@ -299,47 +282,30 @@ public:
 
         // Timeout
         std::cerr << "\nTimeout: No dice roll detected within time limit" << std::endl;
-        return false;
+        return -1;
     }
 };
 
 
 int main() {
-    // ------- Test DiceRollDetector -------
     signal(SIGINT, signalHandler);
     signal(SIGTERM, signalHandler);
     initLED();
 
+    int return_code = 0;
+
     try {
         DiceRollDetector detector;
-        cv::Mat diceFrame;
-        
-        // Wait for dice roll with full state machine
-        if (detector.detectDiceRoll(diceFrame)) {
-            // Detect dice val now          
-            std::cout << "\n=== Dice Roll Detection Complete ===" << std::endl;
-            int dice_val = detectDiceVal();
-            std::cout << "\nDice detected: " << dice_val << std::endl;
-        } else {
+        int dice_val = detector.detectDiceRoll();
+        if (dice_val == -1) {
             std::cerr << "Failed to detect dice roll" << std::endl;
-            cleanupLED();
-            return 1;
+            return_code = 1;
         }
-
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
-        
-        cleanupLED();
-        return 1;
+        return_code = 1;
     }
 
-    // ------- Test detectDiceVal -------
-    // int result = detectDiceVal();
-    // if (result == -1) {
-    //     std::cerr << "Failed to detect dice value" << std::endl;
-    //     return 1;
-    // }
-
     cleanupLED();
-    return 0;
+    return return_code;
 }

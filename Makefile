@@ -6,4 +6,4 @@ dice_detection: dice_detection.cpp
 	$(CXX) $(CXXFLAGS) dice_detection.cpp -o dice_detection $(OPENCV_FLAGS) -llgpio
 
 clean:
-	rm -f dice_detection
+	rm -f dice_detection dice_detected.jpg dice_original.jpg dice_threshold.jpg
