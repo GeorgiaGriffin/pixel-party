@@ -67,3 +67,10 @@ static void handle_endgame() {
     // Sort active players by score
     // Call graphics for end game
 }
+
+
+int main() {
+    uart_init("/dev/serial0");
+    game_loop();
+    return 0;
+}
