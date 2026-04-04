@@ -47,8 +47,9 @@ int detectDiceVal() {
     // Apply Gaussian blur to reduce noise
     cv::GaussianBlur(thresh, thresh, cv::Size(3, 3), 0);
 
-    // Apply threshold (third is threshold value, adjust as needed, lower for more black)
-    cv::threshold(thresh, thresh, 65, 255, cv::THRESH_BINARY_INV);
+    // Apply threshold 
+    int thresh_val = 43; // adjust as needed, lower for more black
+    cv::threshold(thresh, thresh, thresh_val, 255, cv::THRESH_BINARY_INV);
 
     if (TESTING) {
         cv::imwrite("dice_threshold.jpg", thresh);
@@ -61,10 +62,10 @@ int detectDiceVal() {
     // Filter by area
     params.filterByArea = true;
     params.minArea = 100;
-    params.maxArea = 1000;
+    params.maxArea = 10000;
     // Filter by circularity
     params.filterByCircularity = true;
-    params.minCircularity = 0.7;
+    params.minCircularity = 0.5;
     // Filter by color
     params.filterByColor = true;
     params.blobColor = 255; // white blobs
@@ -104,12 +105,12 @@ int detectDiceVal() {
             cv::circle(frameWithDots, cv::Point(x, y), radius, cv::Scalar(0, 255, 0), 5);
         }
         cv::imwrite("dice_detected.jpg", frameWithDots);
-        std::cout << "\nDots detected: " << numDots << std::endl;
+        std::cout << "\n  Dots detected: " << numDots << std::endl;
         if (numDots < 1 || numDots > 6) {
-            std::cout << "ERROR: detected invalid dice value" << std::endl;
+            std::cout << "  ERROR: detected invalid dice value" << std::endl;
         }
     }
-    std::cout << "\nDice value detected: " << diceVal << std::endl;
+    std::cout << "  Dice value detected: " << diceVal << std::endl;
 
     return diceVal;
 }
@@ -193,8 +194,7 @@ public:
             return -1;
         }
 
-        std::cout << "\n[STATE: WAITING_FOR_PICKUP]" << std::endl;
-        std::cout << "  Pick up the dice\n" << std::endl;
+        std::cout << "  Pick up the dice" << std::endl;
 
         // Main state machine loop
         while (totalFrameCount < MAX_WAIT_FRAMES) {
@@ -214,8 +214,7 @@ public:
                     if (motionPercent > MIN_MOTION_PERCENT) {
                         motionFrameCount++;
                         if (motionFrameCount >= 3) {  // Need 3 consecutive frames of motion
-                            std::cout << "  Dice picked up! Waiting for roll...\n" << std::endl;
-                            std::cout << "\n[STATE: DICE_IN_MOTION]" << std::endl;
+                            std::cout << "  Dice picked up! Waiting for roll..." << std::endl;
                             currentState = DICE_IN_MOTION;
                             motionFrameCount = 0;
                         }
@@ -233,7 +232,6 @@ public:
                         // Motion stopped - was it a roll?
                         if (motionFrameCount >= MIN_ROLL_FRAMES) {
                             std::cout << "  Dice rolled! " << motionFrameCount << " frames of motion" << std::endl;
-                            std::cout << "\n[STATE: DICE_SETTLING]" << std::endl;
                             currentState = DICE_SETTLING;
                             stableFrameCount = 1;
                         } else {
@@ -252,8 +250,7 @@ public:
                         
                         // Check if we have enough stable frames
                         if (stableFrameCount >= STABILITY_FRAMES) {
-                            std::cout << "\n[STATE: DICE_STABLE]" << std::endl;
-                            std::cout << "  Dice is stable! Ready for detection.\n" << std::endl;
+                            std::cout << "  Dice is stable! Ready for detection." << std::endl;
                             currentState = DICE_STABLE;
                         }
                     } else {
@@ -287,7 +284,7 @@ public:
 };
 
 
-int main() {
+int runDiceDetection() {
     signal(SIGINT, signalHandler);
     signal(SIGTERM, signalHandler);
     initLED();
@@ -307,5 +304,12 @@ int main() {
     }
 
     cleanupLED();
+    std::cerr << "=== End Dice Roll Detection ===\n" << std::endl;
     return return_code;
 }
+
+#ifdef DICE_TEST
+int main() {
+    return runDiceDetection();
+}
+#endif

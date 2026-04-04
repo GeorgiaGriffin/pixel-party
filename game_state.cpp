@@ -1,5 +1,6 @@
 #include "game_state.h"
 #include "uart.h"
+#include "dice_detection.h"
 #include <iostream>
 
 static void process_message(const std::string& msg);
@@ -50,6 +51,7 @@ static void handle_registration() {
 static void handle_turn(int player) {
     std::cout << "Player Turn for player " << player << "\n";
     // Dice detection
+    int dice_val = runDiceDetection();
     // Move player with dice 
     // Is position > end? Player complete
     // Else do tile action
