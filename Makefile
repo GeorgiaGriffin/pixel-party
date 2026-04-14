@@ -1,18 +1,19 @@
-# Define paths
-CC = C:/raylib/w64devkit/bin/gcc.exe
-RAYLIB_PATH = C:/raylib/raylib/src
+# Compiler
+CC = gcc
+CFLAGS = -O1 -Wall -std=c99
 
-# Compiler flags
-CFLAGS = -O1 -Wall -std=c99 -Wno-missing-braces
-INCLUDES = -I$(RAYLIB_PATH)
-LIBS = -L$(RAYLIB_PATH) -lraylib -lopengl32 -lgdi32 -lwinmm
+# Use pkg-config to find raylib headers/libs
+RAYLIB_FLAGS = $(shell pkg-config --cflags --libs raylib)
 
-# Fix for "cannot execute as" - we must append the bin path to the system PATH
-export PATH := C:/raylib/w64devkit/bin:$(PATH)
+# Target
+TARGET = pong.exe
+SRC = pong.c
 
-all:
-	$(CC) pong.c -o pong.exe $(CFLAGS) $(INCLUDES) $(LIBS)
-	@echo Build successful! Run with ./pong.exe
+all: $(TARGET)
+
+$(TARGET): $(SRC)
+	$(CC) $(SRC) -o $(TARGET) $(CFLAGS) $(RAYLIB_FLAGS)
+	@echo "Build successful! Run with ./$(TARGET)"
 
 clean:
-	del pong.exe
+	rm -f $(TARGET)
