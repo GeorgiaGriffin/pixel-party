@@ -203,6 +203,7 @@
 
 #include "raylib.h"
 #include <stdlib.h>
+#include <math.h>
 
 #define CALIBER 12
 #define MAX_PLAYERS 4
@@ -218,9 +219,15 @@ typedef struct {
 
 // Globals
 Rectangle screen, playableBorder, ball, top, bottom;
+Rectangle left, right;
 Paddle paddles[MAX_PLAYERS];
 int scores[MAX_PLAYERS];
-int playerCount = 4; // change: 2, 3, or 4
+// int playerCount = 4; // change: 2, 3, or 4
+int playerOne = 1;
+int playerTwo = 1;
+int playerThree = 1;
+int playerFour = 1;
+// int playerCount = playerOne + playerTwo + playerThree + playerFour; // change: 2, 3, or 4
 int winner = 0;
 
 int ballVelX, ballVelY;
@@ -242,6 +249,8 @@ void InitializeElements(void)
     playableBorder = (Rectangle){CALIBER, CALIBER, 800 - 2*CALIBER, 600 - 2*CALIBER};
     top = (Rectangle) {screen.x, screen.y, playableBorder.width, playableBorder.y};
     bottom = (Rectangle) {screen.x, playableBorder.height+CALIBER, screen.width, screen.y};
+    left = (Rectangle){0, 0, CALIBER, screen.height};
+    right = (Rectangle){screen.width - CALIBER, 0, CALIBER, screen.height};
     
     // Ball
     ball = (Rectangle){400, 300, CALIBER, CALIBER};
@@ -249,25 +258,28 @@ void InitializeElements(void)
     ballVelY = CALIBER/2;
 
     ResetScores();
+    if (playerTwo == 1) {
+        // LEFT paddle
+        paddles[1].rect = (Rectangle){CALIBER, 250, CALIBER, 5*CALIBER};
+        paddles[1].type = VERTICAL;
+    }
 
-    // LEFT paddle
-    paddles[0].rect = (Rectangle){CALIBER, 250, CALIBER, 5*CALIBER};
-    paddles[0].type = VERTICAL;
+    if (playerFour == 1) {
+        // RIGHT paddle
+        paddles[3].rect = (Rectangle){800 - 2*CALIBER, 250, CALIBER, 5*CALIBER};
+        paddles[3].type = VERTICAL;
+    }
 
-    // RIGHT paddle
-    paddles[1].rect = (Rectangle){800 - 2*CALIBER, 250, CALIBER, 5*CALIBER};
-    paddles[1].type = VERTICAL;
-
-    if (playerCount >= 3) {
+    if (playerThree == 1) {
         // BOTTOM paddle
         paddles[2].rect = (Rectangle){350, 600 - 2*CALIBER, 5*CALIBER, CALIBER};
         paddles[2].type = HORIZONTAL;
     }
 
-    if (playerCount == 4) {
+    if (playerOne == 1) {
         // TOP paddle
-        paddles[3].rect = (Rectangle){350, CALIBER, 5*CALIBER, CALIBER};
-        paddles[3].type = HORIZONTAL;
+        paddles[0].rect = (Rectangle){350, CALIBER, 5*CALIBER, CALIBER};
+        paddles[0].type = HORIZONTAL;
     }
 }
 
@@ -282,186 +294,36 @@ void ResetScores(void)
 void MoveBall(void)
 {
     // Paddle collisions
-    for (int i = 0; i < playerCount; i++)
-    {
-        if (CheckCollisionRecs(ball, paddles[i].rect))
-        {
-            if (paddles[i].type == VERTICAL)
-                ballVelX = -ballVelX;
-            else
-                ballVelY = -ballVelY;
-        }
-        else {
-            // if (playerCount == 4) {
-            //     // Wall scoring
-            //     if (ball.x < 0)
-            //     {
-            //         scores[1]++; // left missed
-            //         scores[2]++;
-            //         scores[3]++;
-            //         ServeBall();
-            //     }
-            //     else if (ball.x > screen.width)
-            //     {
-            //         scores[0]++; // right missed
-            //         scores[2]++;
-            //         scores[3]++;
-            //         ServeBall();
-            //     }
-            //     if (ball.y > screen.height)
-            //     {
-            //         scores[0]++; // bottom missed
-            //         scores[1]++;
-            //         scores[3]++;
-            //         ServeBall();
-            //     }
-            //     if (ball.y < 0)
-            //     {
-            //         scores[0]++; // top missed
-            //         scores[1]++;
-            //         scores[2]++;
-            //         ServeBall();
-            //     }
-            // }
-            // else if (playerCount == 3) {
-            //     // Wall scoring
-            //     if (CheckCollisionRecs(ball, top)) ballVelY = -ballVelY;
-            //     else {
-            //         if (ball.x < 0)
-            //         {
-            //             scores[1]++; // left missed
-            //             scores[2]++;
-            //             ServeBall();
-            //         }
-            //         else if (ball.x > screen.width)
-            //         {
-            //             scores[0]++; // right missed
-            //             scores[2]++;
-            //             ServeBall();
-            //         }
-            //         if (ball.y > screen.height)
-            //         {
-            //             scores[0]++; // bottom missed
-            //             scores[1]++;
-            //             ServeBall();
-            //         }
-            //     }
-                
-            // }
-            // else {
-            //     // Wall scoring
-            //     if (CheckCollisionRecs(ball, top) || (CheckCollisionRecs(ball, bottom))) ballVelY = -ballVelY;
-            //     else {
-            //         if (ball.x < 0)
-            //         {
-            //             scores[1]++; // left missed
+    
+    if (playerOne && CheckCollisionRecs(ball, paddles[0].rect))
+        ballVelY = -ballVelY;
 
-            //             ServeBall();
-            //         }
-            //         else if (ball.x > screen.width)
-            //         {
-            //             scores[0]++; // right missed
+    if (playerTwo && CheckCollisionRecs(ball, paddles[1].rect))
+        ballVelX = -ballVelX;
 
-            //             ServeBall();
-            //         }
-            //     }
-            // }
-        }
-    }
+    if (playerThree && CheckCollisionRecs(ball, paddles[2].rect))
+        ballVelY = -ballVelY;
 
-    if (playerCount == 4) {
-        // Wall scoring
-        if (ball.x < 0)
-        {
-            scores[1]++; // left missed
-            scores[2]++;
-            scores[3]++;
-            ServeBall();
-        }
-        else if (ball.x > screen.width)
-        {
-            scores[0]++; // right missed
-            scores[2]++;
-            scores[3]++;
-            ServeBall();
-        }
-        if (ball.y > screen.height)
-        {
-            scores[0]++; // bottom missed
-            scores[1]++;
-            scores[3]++;
-            ServeBall();
-        }
-        if (ball.y < 0)
-        {
-            scores[0]++; // top missed
-            scores[1]++;
-            scores[2]++;
-            ServeBall();
-        }
-    }
-    else if (playerCount == 3) {
-        // Wall scoring
-        if (CheckCollisionRecs(ball, top)) ballVelY = -ballVelY;
-        else {
-            if (ball.x < 0)
-            {
-                scores[1]++; // left missed
-                scores[2]++;
-                ServeBall();
-            }
-            else if (ball.x > screen.width)
-            {
-                scores[0]++; // right missed
-                scores[2]++;
-                ServeBall();
-            }
-            if (ball.y > screen.height)
-            {
-                scores[0]++; // bottom missed
-                scores[1]++;
-                ServeBall();
-            }
-        }
-        
-    }
-    else {
-        // Wall scoring
-        if (CheckCollisionRecs(ball, top) || (CheckCollisionRecs(ball, bottom))) ballVelY = -ballVelY;
-        else {
-            if (ball.x < 0)
-            {
-                scores[1]++; // left missed
+    if (playerFour && CheckCollisionRecs(ball, paddles[3].rect))
+        ballVelX = -ballVelX;
+    
 
-                ServeBall();
-            }
-            else if (ball.x > screen.width)
-            {
-                scores[0]++; // right missed
-
-                ServeBall();
-            }
-        }
-    }
-
-    // // Wall scoring
-    // if (ball.x < 0)
-    // {
-    //     scores[1]++; // left missed
-    //     scores[2]++;
-    //     scores[3]++;
-    //     ServeBall();
-    // }
-    // else if (ball.x > screen.width)
-    // {
-    //     scores[0]++; // right missed
-    //     scores[2]++;
-    //     scores[3]++;
-    //     ServeBall();
-    // }
-
-    // if (playerCount >= 3)
-    // {
+    // if (playerCount == 4) {
+    //     // Wall scoring
+    //     if (ball.x < 0)
+    //     {
+    //         scores[1]++; // left missed
+    //         scores[2]++;
+    //         scores[3]++;
+    //         ServeBall();
+    //     }
+    //     else if (ball.x > screen.width)
+    //     {
+    //         scores[0]++; // right missed
+    //         scores[2]++;
+    //         scores[3]++;
+    //         ServeBall();
+    //     }
     //     if (ball.y > screen.height)
     //     {
     //         scores[0]++; // bottom missed
@@ -469,10 +331,6 @@ void MoveBall(void)
     //         scores[3]++;
     //         ServeBall();
     //     }
-    // }
-
-    // if (playerCount == 4)
-    // {
     //     if (ball.y < 0)
     //     {
     //         scores[0]++; // top missed
@@ -481,6 +339,93 @@ void MoveBall(void)
     //         ServeBall();
     //     }
     // }
+    // else if (playerCount == 3) {
+    //     // Wall scoring
+    //     if (CheckCollisionRecs(ball, top)) ballVelY = -ballVelY;
+    //     else {
+    //         if (ball.x < 0)
+    //         {
+    //             scores[1]++; // left missed
+    //             scores[2]++;
+    //             ServeBall();
+    //         }
+    //         else if (ball.x > screen.width)
+    //         {
+    //             scores[0]++; // right missed
+    //             scores[2]++;
+    //             ServeBall();
+    //         }
+    //         if (ball.y > screen.height)
+    //         {
+    //             scores[0]++; // bottom missed
+    //             scores[1]++;
+    //             ServeBall();
+    //         }
+    //     }
+        
+    // }
+    // else {
+    //     // Wall scoring
+    //     if (CheckCollisionRecs(ball, top) || (CheckCollisionRecs(ball, bottom))) ballVelY = -ballVelY;
+    //     else {
+    //         if (ball.x < 0)
+    //         {
+    //             scores[1]++; // left missed
+
+    //             ServeBall();
+    //         }
+    //         else if (ball.x > screen.width)
+    //         {
+    //             scores[0]++; // right missed
+
+    //             ServeBall();
+    //         }
+    //     }
+    // }
+
+    if (playerOne == 1) {
+        
+        if (ball.y < 0) {
+            if (playerFour) scores[3]++; // top missed
+            if (playerTwo) scores[1]++;
+            if (playerThree) scores[2]++;
+            ServeBall();
+        }
+    }
+    else if (CheckCollisionRecs(ball, top)) ballVelY = -ballVelY;
+    
+    
+    if (playerTwo == 1) {
+        if (ball.x < 0) {
+            if (playerThree) scores[2]++; // left missed
+            if (playerOne) scores[0]++;
+            if (playerFour) scores[3]++;
+            ServeBall();
+        }
+    }
+    else if (CheckCollisionRecs(ball, left)) ballVelX = -ballVelX;
+    
+    if (playerThree == 1) {
+       if (ball.y > screen.height)
+        {
+            if (playerOne) scores[0]++; // bottom missed
+            if (playerTwo) scores[1]++;
+            if (playerFour) scores[3]++;
+            ServeBall();
+        }
+    }
+    else if (CheckCollisionRecs(ball, bottom)) ballVelY = -ballVelY;
+
+    if (playerFour == 1) {
+        if (ball.x > screen.width)
+        {
+            if (playerOne) scores[0]++; // right missed
+            if (playerThree) scores[2]++;
+            if (playerTwo) scores[1]++;
+            ServeBall();
+        }
+    }
+    else if (CheckCollisionRecs(ball, right)) ballVelX = -ballVelX;
 
     ball.x += ballVelX;
     ball.y += ballVelY;
@@ -491,20 +436,25 @@ void MovePaddles(void)
 {
     int step = CALIBER;
 
-    // LEFT (Q/A)
-    if (IsKeyDown(KEY_Q)) paddles[0].rect.y -= step;
-    if (IsKeyDown(KEY_A)) paddles[0].rect.y += step;
-    if (paddles[0].rect.y <= 0) paddles[0].rect.y = 0;
-    if (paddles[0].rect.y >= playableBorder.height - (paddles[0].rect.height / 2)) paddles[0].rect.y = playableBorder.height - (paddles[0].rect.height / 2);
+    if (playerTwo == 1)
+    {
+        // LEFT (Q/A)
+        if (IsKeyDown(KEY_Q)) paddles[1].rect.y -= step;
+        if (IsKeyDown(KEY_A)) paddles[1].rect.y += step;
+        if (paddles[1].rect.y <= 0) paddles[1].rect.y = 0;
+        if (paddles[1].rect.y >= playableBorder.height - (paddles[1].rect.height / 2)) paddles[1].rect.y = playableBorder.height - (paddles[1].rect.height / 2);
+    }
 
-    // RIGHT (I/J)
-    if (IsKeyDown(KEY_I)) paddles[1].rect.y -= step;
-    if (IsKeyDown(KEY_J)) paddles[1].rect.y += step;
-    if (paddles[1].rect.y <= 0) paddles[1].rect.y = 0;
-    if (paddles[1].rect.y >= playableBorder.height - (paddles[1].rect.height / 2)) paddles[1].rect.y = playableBorder.height - (paddles[1].rect.height / 2);
+    if (playerFour == 1) {
+        // RIGHT (I/J)
+        if (IsKeyDown(KEY_I)) paddles[3].rect.y -= step;
+        if (IsKeyDown(KEY_J)) paddles[3].rect.y += step;
+        if (paddles[3].rect.y <= 0) paddles[3].rect.y = 0;
+        if (paddles[3].rect.y >= playableBorder.height - (paddles[3].rect.height / 2)) paddles[3].rect.y = playableBorder.height - (paddles[3].rect.height / 2);
+    }
 
 
-    if (playerCount >= 3)
+    if (playerThree == 1)
     {
         // BOTTOM (N/M)
         if (IsKeyDown(KEY_N)) paddles[2].rect.x -= step;
@@ -514,31 +464,50 @@ void MovePaddles(void)
 
     }
 
-    if (playerCount == 4)
+    if (playerOne == 1)
     {
         // TOP (Z/X)
-        if (IsKeyDown(KEY_Z)) paddles[3].rect.x -= step;
-        if (IsKeyDown(KEY_X)) paddles[3].rect.x += step;
-        if (paddles[3].rect.x <= 0) paddles[3].rect.x = 0;
-        if (paddles[3].rect.x >= playableBorder.width - (paddles[3].rect.width / 2)) paddles[3].rect.x = playableBorder.width - (paddles[3].rect.width / 2);
+        if (IsKeyDown(KEY_Z)) paddles[0].rect.x -= step;
+        if (IsKeyDown(KEY_X)) paddles[0].rect.x += step;
+        if (paddles[0].rect.x <= 0) paddles[0].rect.x = 0;
+        if (paddles[0].rect.x >= playableBorder.width - (paddles[0].rect.width / 2)) paddles[0].rect.x = playableBorder.width - (paddles[0].rect.width / 2);
 
     }
 }
 
 // --------------------------------------------
+// void ServeBall(void)
+// {
+//     ball.x = screen.width / 2;
+//     ball.y = screen.height / 2;
+
+//     ballVelX = (GetRandomValue(0,1) ? 1 : -1) * CALIBER/2;
+//     ballVelY = (GetRandomValue(0,1) ? 1 : -1) * CALIBER/2;
+// }
 void ServeBall(void)
 {
     ball.x = screen.width / 2;
     ball.y = screen.height / 2;
 
-    ballVelX = (GetRandomValue(0,1) ? 1 : -1) * CALIBER/2;
-    ballVelY = (GetRandomValue(0,1) ? 1 : -1) * CALIBER/2;
+    float speed = CALIBER / 2.0f;
+
+    // random angle but avoid too vertical / too horizontal
+    float angle = GetRandomValue(-60, 60) * DEG2RAD;
+
+    // randomly flip left/right direction
+    if (GetRandomValue(0, 1)) angle += PI;
+
+    ballVelX = (int)(cosf(angle) * speed);
+    ballVelY = (int)(sinf(angle) * speed);
+
+    // safety: avoid 0 velocity (boring straight line)
+    if (ballVelX == 0) ballVelX = (GetRandomValue(0,1) ? 1 : -1);
 }
 
 // --------------------------------------------
 int main(void)
 {
-    GameScreen currentScreen = TITLE;
+    GameScreen currentScreen = GAMEPLAY;
     InitializeElements();
 
     while (!WindowShouldClose())
@@ -555,22 +524,29 @@ int main(void)
                 MoveBall();
                 MovePaddles();
 
+                // winner = 0;
+
                 if ((scores[0] >= 11) || (scores[1] >= 11) || (scores[2] >= 11) || (scores[3] >= 11)){
-                    for (int i = 0; i < playerCount; i++)
+                    winner = -1;
+
+                    for (int i = 0; i < 4; i++)
                     {
-                        if (scores[winner] < scores[i]) winner = i;
+                        if ((i == 0 && !playerOne) ||
+                            (i == 1 && !playerTwo) ||
+                            (i == 2 && !playerThree) ||
+                            (i == 3 && !playerFour))
+                            continue;
+
+                        if (winner == -1 || scores[i] > scores[winner])
+                            winner = i;
                     }
-                    if (scores[winner] < 11) {
-                        winner = 50;
-                        break;
-                    }
-                    for (int i = 0; i < playerCount; i++)
+
+                    for (int i = 0; i < 4; i++)
                     {
-                        if ((winner != i) && (scores[winner] == scores[i])) {
+                        if (winner != i && scores[i] == scores[winner])
                             winner = -1;
-                            break;
-                        }
                     }
+                    
                     if (winner == -1) break;
                     currentScreen = ENDING;
                 }
@@ -603,15 +579,22 @@ int main(void)
             DrawRectangleRec(ball, WHITE);
 
             // Draw paddles
-            for (int i = 0; i < playerCount; i++)
-                DrawRectangleRec(paddles[i].rect, WHITE);
+            // for (int i = 0; i < playerCount; i++)
+            //     DrawRectangleRec(paddles[i].rect, WHITE);
+
+            if (playerOne) DrawRectangleRec(paddles[0].rect, WHITE);
+            if (playerTwo) DrawRectangleRec(paddles[1].rect, WHITE);
+            if (playerThree) DrawRectangleRec(paddles[2].rect, WHITE);
+            if (playerFour) DrawRectangleRec(paddles[3].rect, WHITE);
 
             // Draw scores
-            for (int i = 0; i < playerCount; i++)
-            {
-                DrawText(TextFormat("P%d: %d", i+1, scores[i]),
-                         20, 20 + i*30, 20, GRAY);
-            }
+            if (playerOne) DrawText(TextFormat("P1: %d", scores[0]), 20, 20, 20, GRAY);
+
+            if (playerTwo) DrawText(TextFormat("P2: %d", scores[1]), 20, 50, 20, GRAY);
+
+            if (playerThree) DrawText(TextFormat("P3: %d", scores[2]), 20, 80, 20, GRAY);
+
+            if (playerFour) DrawText(TextFormat("P4: %d", scores[3]), 20, 110, 20, GRAY);
         }
         else {
              ClearBackground(BLACK);
