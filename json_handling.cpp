@@ -87,3 +87,23 @@ void State::updateActivePlayers() {
         players[i].active = (players[i].out == 1) ? 1 : 0;
     }
 }
+
+
+void State::resetData() {
+    for (int i = 0; i < NUM_PLAYERS; i++) {
+        players[i].score = 0;
+        players[i].location = 0;
+        players[i].out = 0;
+        players[i].active = 0;
+    }
+
+    start = 0;
+    state = 0;
+    totalActive = 0;
+    winner = 0;
+    winnerScore = 0;
+}
+
+bool State::checkPlayerComplete(int player) {
+    return (players[player - 1].location >= 11);
+}

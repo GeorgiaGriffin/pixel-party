@@ -25,4 +25,6 @@ public:
     bool write(const std::string& path);
 
     void updateActivePlayers();
+    void resetData();
+    bool checkPlayerComplete(int player);
 };

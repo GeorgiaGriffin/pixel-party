@@ -121,7 +121,7 @@ private:
     const int MOTION_THRESHOLD = 20;          // Pixel difference threshold
     const double MIN_MOTION_PERCENT = 0.3;    // Minimum % of frame that needs motion
     const int STABILITY_FRAMES = 5;           // Frames of stability required
-    const int MAX_WAIT_FRAMES = 50;          // Maximum frames to wait before timeout. Short for debuggin ease rn
+    const int MAX_WAIT_FRAMES = 100;          // Maximum frames to wait before timeout. Short for debuggin ease rn
     const int MIN_ROLL_FRAMES = 1; 
 
     // Capture a frame using rpicam-still
@@ -290,10 +290,11 @@ int runDiceDetection() {
     initLED();
 
     int return_code = 0;
+    int dice_val = 0;
 
     try {
         DiceRollDetector detector;
-        int dice_val = detector.detectDiceRoll();
+        dice_val = detector.detectDiceRoll();
         if (dice_val == -1) {
             std::cerr << "Failed to detect dice roll" << std::endl;
             return_code = 1;
@@ -305,7 +306,8 @@ int runDiceDetection() {
 
     cleanupLED();
     std::cerr << "=== End Dice Roll Detection ===\n" << std::endl;
-    return return_code;
+    //return return_code;
+    return dice_val;
 }
 
 #ifdef DICE_TEST

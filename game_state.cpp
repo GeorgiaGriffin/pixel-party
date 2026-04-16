@@ -3,6 +3,10 @@
 #include "dice_detection.h"
 #include "json_handling.hpp"
 #include <iostream>
+#include <thread>
+#include <chrono>
+#include <vector>
+#include <string>
 
 static void process_message(const std::string& msg);
 static void handle_registration();
@@ -10,6 +14,47 @@ static void handle_turn(int player);
 static void handle_endgame();
 
 static State gameState;
+
+static const std::vector<std::string> TILE_ACTIONS = {
+    "none",        // tile 0 (start)
+    "points-2",    // tile 1
+    "none",        // tile 2
+    "minigame",    // tile 3
+    "none",        // tile 4
+    "move-2",      // tile 5
+    "none",        // tile 6
+    "minigame",    // tile 7
+    "points+2",    // tile 8
+    "none",        // tile 9
+    "move+2",     // tile 10
+    "none"         // tile 11 (end)
+};
+
+static void applyTileAction(int player, const std::string& action) {
+    if (action == "none") {
+        return;
+    }
+    else if (action == "minigame") {
+        std::cout << "Player " << player << " triggered a minigame!\n";
+        // TODO: launch minigame
+    }
+    else if (action == "points+2") {
+        gameState.players[player-1].score += 2;
+    }
+    else if (action == "points-2") {
+        gameState.players[player-1].score -= 2;
+    }
+    else if (action == "move-2") {
+        gameState.players[player-1].location -= 2;
+        if (gameState.players[player-1].location < 0)
+            gameState.players[player-1].location = 0;
+    }
+    else if (action == "move+2") {
+        gameState.players[player-1].location += 2;
+        if (gameState.players[player-1].location > 0)
+            gameState.players[player-1].location = 11;
+    }
+}
 
 void game_loop() {
     while (true) {
@@ -40,40 +85,46 @@ static void process_message(const std::string& msg) {
 
 static void handle_registration() {
     std::cout << "Enter Player Registration\n";
+    // initialize variables to 0
+    gameState.resetData();
+    gameState.write("state.json");
 
     // call the graphics to start registration
     system("./graphics &");
 
     // every time a player removes token, write to json
-    
+    int activeCount = 0;
+     
     while (true) {
         // testing without button:
         std::string input;
         while (true) {
-            std::cout << "Start game? Type 'yes': ";
+            std::cout << "Start game? Type 'start': ";
             std::getline(std::cin, input);
-            if (input == "yes") {
+            if (input == "start") {
                 break;
             }
         }
 
         // on start button, mark any out players as active
         gameState.read("state.json");
-        gameState.start = 1;
         gameState.updateActivePlayers();
         gameState.write("state.json");
 
         // count active players
-        int activeCount = 0;
+        activeCount = 0;
         for (int i = 0; i < State::NUM_PLAYERS; i++) {
             if (gameState.players[i].active == 1) {
                 activeCount++;
             }
         }
-
+        // Check at least 2 active players
         if (activeCount < 2) {
             std::cout << "Need at least 2 active players. Restarting registration...\n";
-            //gameState.start = 0;
+            gameState.start = 1;
+            gameState.write("state.json");
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            gameState.start = 0;
             gameState.write("state.json");
             continue;
         }
@@ -81,9 +132,12 @@ static void handle_registration() {
         break; // valid game start
     }
 
-
     // then write to json to toggle the start value 1 0
     gameState.read("state.json");
+    gameState.totalActive = activeCount;
+    gameState.start = 1;
+    gameState.write("state.json");
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
     gameState.start = 0;
     gameState.write("state.json");
 
@@ -96,23 +150,45 @@ static void handle_registration() {
         }
     }
 
+    // move to next graphics state: 1 = board game
+    gameState.state = 1;
+    gameState.write("state.json");
+
     uart_send("PLAYER:" + std::to_string(firstPlayer) + "\n");
 }
 
 
 static void handle_turn(int player) {
     std::cout << "Player Turn for player " << player << "\n";
+
     // Dice detection
     int dice_val = runDiceDetection();
+
     // Move player with dice 
-    // Is position > end? Player complete
-    // Else do tile action
+    gameState.read("state.json");
+    gameState.players[player-1].location += dice_val;
+    gameState.write("state.json");
+
+    // Do tile action
+    int pos = gameState.players[player-1].location;
+    if (pos < 11) {
+        applyTileAction(player, TILE_ACTIONS[pos]);
+    }
+    // json write again after the tile action?
 
     // Get next player or end of game
-    int result = player + 1;
-    if (result > 4) result = 1;
+    int next = player;
+    for (int i = 0; i < State::NUM_PLAYERS; i++) {
+        next++;
+        if (next > 4) next = 1;
+        if (gameState.players[next - 1].active == 1 && !gameState.checkPlayerComplete(next)) {
+            uart_send("NEXT:" + std::to_string(next) + "\n");
+            return;
+        }
+    }
 
-    uart_send("NEXT:" + std::to_string(result) + "\n");
+    // no players left, -1 is end game
+    uart_send("NEXT:" + std::to_string(-1) + "\n");
 }
 
 
