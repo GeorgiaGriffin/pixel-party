@@ -51,7 +51,7 @@ static void applyTileAction(int player, const std::string& action) {
     }
     else if (action == "move+2") {
         gameState.players[player-1].location += 2;
-        if (gameState.players[player-1].location > 0)
+        if (gameState.players[player-1].location > 11)
             gameState.players[player-1].location = 11;
     }
 }
@@ -90,6 +90,7 @@ static void handle_registration() {
     gameState.write("state.json");
 
     // call the graphics to start registration
+    system("pkill -x graphics");
     system("./graphics &");
 
     // every time a player removes token, write to json
@@ -167,14 +168,17 @@ static void handle_turn(int player) {
     // Move player with dice 
     gameState.read("state.json");
     gameState.players[player-1].location += dice_val;
+    if (gameState.players[player-1].location > 11)
+            gameState.players[player-1].location = 11;
     gameState.write("state.json");
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000*dice_val));
 
     // Do tile action
     int pos = gameState.players[player-1].location;
     if (pos < 11) {
         applyTileAction(player, TILE_ACTIONS[pos]);
+        gameState.write("state.json");
     }
-    // json write again after the tile action?
 
     // Get next player or end of game
     int next = player;
@@ -194,8 +198,33 @@ static void handle_turn(int player) {
 
 static void handle_endgame() {
     std::cout << "Endgame\n";
-    // Sort active players by score
-    // Call graphics for end game
+    gameState.read("state.json");
+    
+    // get winner player and score
+    // start with the first active player
+    int win = 0;
+    for (int i = 0; i < State::NUM_PLAYERS; i++) {
+        if (gameState.players[i].active == 1) {
+            win = i + 1; // convert index (0–3) to player number (1–4)
+            break;
+        }
+    }
+    // then see if any other active players beat that score
+    int bestScore = gameState.players[win-1].score;
+
+    for (int i = 0; i < State::NUM_PLAYERS; i++) {
+        if (!gameState.players[i].active) continue;
+        if (gameState.players[i].score > bestScore) {
+            bestScore = gameState.players[i].score;
+            win = i + 1;
+        }
+    }
+
+    gameState.winner = win;
+    gameState.winnerScore = bestScore;
+    // Endgame graphics with state 3
+    gameState.state = 3;
+    gameState.write("state.json");
 }
 
 

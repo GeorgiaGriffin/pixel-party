@@ -10,6 +10,8 @@
 #include <lgpio.h>
 #include <csignal>
 
+const int THRESH_VAL = 20; // lower for more black
+
 const bool TESTING = true;
 
 const int LED_PIN = 17;
@@ -48,8 +50,7 @@ int detectDiceVal() {
     cv::GaussianBlur(thresh, thresh, cv::Size(3, 3), 0);
 
     // Apply threshold 
-    int thresh_val = 30; // adjust as needed, lower for more black
-    cv::threshold(thresh, thresh, thresh_val, 255, cv::THRESH_BINARY_INV);
+    cv::threshold(thresh, thresh, THRESH_VAL, 255, cv::THRESH_BINARY_INV);
 
     if (TESTING) {
         cv::imwrite("dice_threshold.jpg", thresh);
