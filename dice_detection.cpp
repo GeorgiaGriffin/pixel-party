@@ -48,7 +48,7 @@ int detectDiceVal() {
     cv::GaussianBlur(thresh, thresh, cv::Size(3, 3), 0);
 
     // Apply threshold 
-    int thresh_val = 43; // adjust as needed, lower for more black
+    int thresh_val = 30; // adjust as needed, lower for more black
     cv::threshold(thresh, thresh, thresh_val, 255, cv::THRESH_BINARY_INV);
 
     if (TESTING) {

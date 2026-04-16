@@ -31,12 +31,23 @@ std::string uart_receive() {
     // return "";
 
     // testing:
-    std::cout << "UART receive: ";
-    std::string input;
-    std::getline(std::cin, input);
+    fd_set set;
+    struct timeval timeout;
 
-    if (!input.empty()) {
-        return input + "\n";  // mimic real UART messages
+    FD_ZERO(&set);
+    FD_SET(STDIN_FILENO, &set);
+
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 100000; // 100ms
+
+    int rv = select(STDIN_FILENO + 1, &set, NULL, NULL, &timeout);
+
+    if (rv > 0) {
+        std::string input;
+        std::getline(std::cin, input);
+        if (!input.empty()) {
+            return input + "\n";
+        }
     }
 
     return "";

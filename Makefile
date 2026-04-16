@@ -6,7 +6,7 @@ dice_detection: dice_detection.cpp
 	$(CXX) $(CXXFLAGS) -DDICE_TEST dice_detection.cpp -o dice_detection $(OPENCV_FLAGS) -llgpio
 
 game_state: game_state.cpp uart.cpp dice_detection.cpp
-	$(CXX) $(CXXFLAGS) game_state.cpp uart.cpp dice_detection.cpp -o game $(OPENCV_FLAGS) -llgpio
+	$(CXX) $(CXXFLAGS) game_state.cpp uart.cpp dice_detection.cpp json_handling.cpp -o game $(OPENCV_FLAGS) -llgpio
 
 all: dice_detection game_state
 
