@@ -1,7 +1,8 @@
 #pragma once
-#include <iostream>
+#include "stm32f4xx.h"
 
 class GameMachine;
+extern GameMachine* g_machine;  // global so ISRs can reach it
 
 // ========= Abstract base =========
 class GameState {
@@ -39,6 +40,7 @@ public:
     void setState(GameState* s);
     GameState* getState() const { return state; }
     int currentPlayer = 1;
+    bool registrationReady = false;
 
     // States are public so state classes and main can reference them
     PlayerRegistrationState regState;
