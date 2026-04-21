@@ -70,6 +70,12 @@ void Error_Handler(void);
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
 
+//USE WHEN TESTING WITH PCB
+#define PCB
+
+//USE WHEN TESTING WITH NUCLEO
+//#define NUCLEO
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
