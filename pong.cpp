@@ -222,6 +222,13 @@ typedef struct {
 // config.read("config.json")
 
 // Globals
+#define POWERUP_DURATION 2.0f
+#define POWERUP_SPEED_MULT 2
+
+int powerUses[MAX_PLAYERS] = {3,3,3,3};
+float powerTimer[MAX_PLAYERS] = {0};
+bool powerActive[MAX_PLAYERS] = {false};
+
 Rectangle screen, playableBorder, ball, top, bottom;
 Rectangle left, right;
 Paddle paddles[MAX_PLAYERS];
@@ -439,7 +446,7 @@ void MoveBall(void)
 // --------------------------------------------
 void MovePaddles(void)
 {
-    int step = CALIBER;
+    int step = CALIBER/2;
     // IsKeyDown(KEY_Q)
     if (IsKeyDown(KEY_Q)) config.playerTwoMove = -1;
     else if (IsKeyDown(KEY_A)) config.playerTwoMove = 1;
@@ -456,6 +463,15 @@ void MovePaddles(void)
     if (IsKeyDown(KEY_N)) config.playerThreeMove = -1;
     else if (IsKeyDown(KEY_M)) config.playerThreeMove = 1;
     else config.playerThreeMove = 0; 
+
+    if (IsKeyPressed(KEY_ONE)) config.playerOnePowerUp = 1;
+    else config.playerOnePowerUp = 0;
+    if (IsKeyPressed(KEY_TWO)) config.playerTwoPowerUp = 1;
+    else config.playerTwoPowerUp = 0;
+    if (IsKeyPressed(KEY_THREE)) config.playerThreePowerUp = 1;
+    else config.playerThreePowerUp = 0;
+    if (IsKeyPressed(KEY_FOUR)) config.playerFourPowerUp = 1;
+    else config.playerFourPowerUp = 0;
     
     config.write("config.json");
     
@@ -465,14 +481,14 @@ void MovePaddles(void)
     if (playerTwo == 1)
     {
         // LEFT (Q/A)
-        if (config.playerTwoMove != 0) paddles[1].rect.y += config.playerTwoMove * step;
+        if (config.playerTwoMove != 0) paddles[1].rect.y += config.playerTwoMove * step * (powerActive[1] ? POWERUP_SPEED_MULT : 1);
         if (paddles[1].rect.y <= 0) paddles[1].rect.y = 0;
         if (paddles[1].rect.y >= playableBorder.height - (paddles[1].rect.height / 2)) paddles[1].rect.y = playableBorder.height - (paddles[1].rect.height / 2);
     }
 
     if (playerFour == 1) {
         // RIGHT (I/J)
-        if (config.playerFourMove != 0) paddles[3].rect.y += config.playerFourMove * step;
+        if (config.playerFourMove != 0) paddles[3].rect.y += config.playerFourMove * step * (powerActive[3] ? POWERUP_SPEED_MULT : 1);
         if (paddles[3].rect.y <= 0) paddles[3].rect.y = 0;
         if (paddles[3].rect.y >= playableBorder.height - (paddles[3].rect.height / 2)) paddles[3].rect.y = playableBorder.height - (paddles[3].rect.height / 2);
     }
@@ -481,7 +497,7 @@ void MovePaddles(void)
     if (playerThree == 1)
     {
         // BOTTOM (N/M)
-        if (config.playerThreeMove != 0) paddles[2].rect.x += config.playerThreeMove * step;
+        if (config.playerThreeMove != 0) paddles[2].rect.x += config.playerThreeMove * step * (powerActive[2] ? POWERUP_SPEED_MULT : 1);
         if (paddles[2].rect.x <= 0) paddles[2].rect.x = 0;
         if (paddles[2].rect.x >= playableBorder.width - (paddles[2].rect.width / 2)) paddles[2].rect.x = playableBorder.width - (paddles[2].rect.width / 2);
 
@@ -490,10 +506,39 @@ void MovePaddles(void)
     if (playerOne == 1)
     {
         // TOP (Z/X)
-        if (config.playerOneMove != 0) paddles[0].rect.x += config.playerOneMove * step;
+        if (config.playerOneMove != 0) paddles[0].rect.x += config.playerOneMove * step * (powerActive[0] ? POWERUP_SPEED_MULT : 1);
         if (paddles[0].rect.x <= 0) paddles[0].rect.x = 0;
         if (paddles[0].rect.x >= playableBorder.width - (paddles[0].rect.width / 2)) paddles[0].rect.x = playableBorder.width - (paddles[0].rect.width / 2);
 
+    }
+    // Activate powerups
+    if (config.playerOnePowerUp && playerOne && powerUses[0] > 0 && !powerActive[0]) {
+        powerActive[0] = true;
+        powerTimer[0] = POWERUP_DURATION;
+        powerUses[0]--;
+    }
+    if (config.playerTwoPowerUp && playerTwo && powerUses[1] > 0 && !powerActive[1]) {
+        powerActive[1] = true;
+        powerTimer[1] = POWERUP_DURATION;
+        powerUses[1]--;
+    }
+    if (config.playerThreePowerUp && playerThree && powerUses[2] > 0 && !powerActive[2]) {
+        powerActive[2] = true;
+        powerTimer[2] = POWERUP_DURATION;
+        powerUses[2]--;
+    }
+    if (config.playerFourPowerUp && playerFour && powerUses[3] > 0 && !powerActive[3]) {
+        powerActive[3] = true;
+        powerTimer[3] = POWERUP_DURATION;
+        powerUses[3]--;
+    }
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        if (powerActive[i]) {
+            powerTimer[i] -= GetFrameTime();
+            if (powerTimer[i] <= 0) {
+                powerActive[i] = false;
+            }
+        }
     }
 }
 
@@ -588,6 +633,8 @@ int main(void)
                 for (int i = 0; i < 4; i++)
                 {
                     scores[i] = 0;
+                    powerUses[i] = 3;
+
                 }
                 if (IsKeyPressed(KEY_ENTER))
                     currentScreen = GAMEPLAY;
@@ -612,10 +659,10 @@ int main(void)
             // for (int i = 0; i < playerCount; i++)
             //     DrawRectangleRec(paddles[i].rect, WHITE);
 
-            if (playerOne) DrawRectangleRec(paddles[0].rect, WHITE);
-            if (playerTwo) DrawRectangleRec(paddles[1].rect, WHITE);
-            if (playerThree) DrawRectangleRec(paddles[2].rect, WHITE);
-            if (playerFour) DrawRectangleRec(paddles[3].rect, WHITE);
+            if (playerOne) DrawRectangleRec(paddles[0].rect, powerActive[0] ? RED : WHITE);
+            if (playerTwo) DrawRectangleRec(paddles[1].rect, powerActive[1] ? RED : WHITE);
+            if (playerThree) DrawRectangleRec(paddles[2].rect, powerActive[2] ? RED : WHITE);
+            if (playerFour) DrawRectangleRec(paddles[3].rect, powerActive[3] ? RED : WHITE);
 
             // Draw scores
             if (playerOne) DrawText(TextFormat("P1: %d", scores[0]), 20, 20, 20, GRAY);
@@ -625,6 +672,15 @@ int main(void)
             if (playerThree) DrawText(TextFormat("P3: %d", scores[2]), 20, 80, 20, GRAY);
 
             if (playerFour) DrawText(TextFormat("P4: %d", scores[3]), 20, 110, 20, GRAY);
+
+            //display powerups left:
+            if (playerOne) DrawText(TextFormat("P1 Boosts: %d", powerUses[0]), 150, 20, 20, GRAY);
+
+            if (playerTwo) DrawText(TextFormat("P2 Boosts: %d", powerUses[1]), 150, 50, 20, GRAY);
+
+            if (playerThree) DrawText(TextFormat("P3 Boosts: %d", powerUses[2]), 150, 80, 20, GRAY);
+
+            if (playerFour) DrawText(TextFormat("P4 Boosts: %d", powerUses[3]), 150, 110, 20, GRAY);
         }
         else {
              ClearBackground(BLACK);

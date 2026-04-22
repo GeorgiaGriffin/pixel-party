@@ -17,14 +17,20 @@ bool GameConfig::read(const std::string& path) {
     file >> j;
 
     playerOne   = j.value("playerOne", 0);
-    playerTwo   = j.value("playerTwo", 1);
+    playerTwo   = j.value("playerTwo", 0);
     playerThree = j.value("playerThree", 0);
-    playerFour  = j.value("playerFour", 1);
+    playerFour  = j.value("playerFour", 0);
 
     playerOneMove   = j.value("playerOneMove", 0);
     playerTwoMove   = j.value("playerTwoMove", 0);
     playerThreeMove = j.value("playerThreeMove", 0);
     playerFourMove  = j.value("playerFourMove", 0);
+
+    
+    playerOnePowerUp = j.value("playerOnePowerUp", 0);
+    playerTwoPowerUp = j.value("playerTwoPowerUp", 0);
+    playerThreePowerUp = j.value("playerThreePowerUp", 0);
+    playerFourPowerUp = j.value("playerFourPowerUp", 0);
 
     return true;
 }
@@ -42,6 +48,11 @@ bool GameConfig::write(const std::string& path) {
     j["playerTwoMove"] = playerTwoMove;
     j["playerThreeMove"] = playerThreeMove;
     j["playerFourMove"] = playerFourMove;
+
+    j["playerOnePowerUp"] = playerOnePowerUp;
+    j["playerTwoPowerUp"] = playerTwoPowerUp;
+    j["playerThreePowerUp"] = playerThreePowerUp;
+    j["playerFourPowerUp"] = playerFourPowerUp;
 
     std::ofstream file(path);
 
