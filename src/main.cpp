@@ -12,11 +12,15 @@ int main(void) {
     ADC_Init();
     EXTI_Init();
 
+    // delay so serial monitor connects
+    for (volatile int i = 0; i < 4000000; i++);
+
     GameMachine game;
     g_machine = &game;
     game.setState(&game.regState);
 
     while (1) {
+        handleTokenEvents(&game);
         game.advance();
     }
 }

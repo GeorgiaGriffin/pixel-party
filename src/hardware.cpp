@@ -170,10 +170,10 @@ extern "C" { // needed to use cpp with platform io
     void EXTI4_IRQHandler(void) {
         if (EXTI->PR & (1 << TOKEN2_PIN)) {
             EXTI->PR |= (1 << TOKEN2_PIN);
-            if (GPIOC->IDR & (1 << TOKEN2_PIN))
-                printf("TOKEN2:0\r\n");  // pin high = removed
-            else
-                printf("TOKEN2:1\r\n");  // pin low = placed (active low with pull-up)
+            if (g_machine) {
+                g_machine->tokenState[1] = (GPIOC->IDR & (1 << TOKEN2_PIN)) ? 0 : 1;
+                g_machine->tokenEvent |= (1 << 1);
+            }
         }
     }
 
@@ -181,24 +181,24 @@ extern "C" { // needed to use cpp with platform io
     void EXTI9_5_IRQHandler(void) {
         if (EXTI->PR & (1 << TOKEN1_PIN)) {
             EXTI->PR |= (1 << TOKEN1_PIN);
-            if (GPIOC->IDR & (1 << TOKEN1_PIN))
-                printf("TOKEN1:0\r\n");
-            else
-                printf("TOKEN1:1\r\n");
+            if (g_machine) {
+                g_machine->tokenState[0] = (GPIOC->IDR & (1 << TOKEN1_PIN)) ? 0 : 1;
+                g_machine->tokenEvent |= (1 << 0);
+            }
         }
         if (EXTI->PR & (1 << TOKEN3_PIN)) {
             EXTI->PR |= (1 << TOKEN3_PIN);
-            if (GPIOC->IDR & (1 << TOKEN3_PIN))
-                printf("TOKEN3:0\r\n");
-            else
-                printf("TOKEN3:1\r\n");
+            if (g_machine) {
+                g_machine->tokenState[2] = (GPIOC->IDR & (1 << TOKEN3_PIN)) ? 0 : 1;
+                g_machine->tokenEvent |= (1 << 2);
+            }
         }
         if (EXTI->PR & (1 << TOKEN4_PIN)) {
             EXTI->PR |= (1 << TOKEN4_PIN);
-            if (GPIOC->IDR & (1 << TOKEN4_PIN))
-                printf("TOKEN4:0\r\n");
-            else
-                printf("TOKEN4:1\r\n");
+            if (g_machine) {
+                g_machine->tokenState[3] = (GPIOC->IDR & (1 << TOKEN4_PIN)) ? 0 : 1;
+                g_machine->tokenEvent |= (1 << 3);
+            }
         }
     }
 
@@ -224,7 +224,7 @@ extern "C" { // needed to use cpp with platform io
         if (EXTI->PR & (1 << START_BUTTON_PIN)) {
             EXTI->PR |= (1 << START_BUTTON_PIN);
             printf("START BUTTON pressed (PB15)\r\n");
-            if (g_machine) g_machine->advance();
+            if (g_machine) g_machine->startPressed = true;
         }
     }
 }
@@ -237,8 +237,12 @@ char USART6_ReadChar(void) {
 
 void USART6_ReadLine(char* buf, int maxlen) {
     int i = 0;
-    char c;
-    while ((c = USART6_ReadChar()) != '\r' && i < maxlen - 1) {
+    while (i < maxlen - 1) {
+        char c = USART6_ReadChar();
+        if (c == '\r' || c == '\n') {
+            if (i == 0) continue; // Skip leading newlines
+            break;
+        }
         buf[i++] = c;
     }
     buf[i] = '\0';

@@ -16,52 +16,71 @@ void GameMachine::advance() { state->advance(this); }
 
 void GameMachine::reset()   { setState(&regState); }
 
+static bool parseNext(const char* buf, int* out) {
+    if (buf[0]=='N' && buf[1]=='E' && buf[2]=='X' && buf[3]=='T' && buf[4]==':') {
+        *out = atoi(&buf[5]);
+        return true;
+    }
+    return false;
+}
+
+void handleTokenEvents(GameMachine* m) {
+    uint8_t events = m->tokenEvent;
+    // Clear all pending events at once
+    m->tokenEvent = 0;
+
+    for (int i = 0; i < 4; i++) {
+        if (events & (1 << i)) {
+            printf("TOKEN%d:%d\r\n", i + 1, m->tokenState[i]);
+        }
+    }
+}
+
 // ========= PlayerRegistration =========
 void PlayerRegistrationState::enter(GameMachine* m) {
-    m->registrationReady = false;
-    printf("\n[Registration] Waiting for players to place tokens.\r\n");
-    printf("\n[Registration] Press START when ready.\r\n");
-
-    // Block here waiting for Pi to send NEXT:n
-    // Real logic: parse "NEXT:n" over UART
-    // Mock: type the first player number into serial monitor
-    
-    // Flush any garbage in the receive buffer
-    while (USART6->SR & USART_SR_RXNE) {
-        (void)USART6->DR;
-    }
-
-    printf("Waiting for NEXT:n from Pi: \r\n");
-    int n = USART6_ReadInt();
-    m->currentPlayer = n;
     m->registrationReady = true;
-    printf("\n[Registration] Ready. First player: %d\r\n", n);
+    m->startPressed = false;
+
+    printf("REGISTER\r\n");
+    printf("[Registration] Waiting for START.\r\n");
 }
 
 void PlayerRegistrationState::advance(GameMachine* m) {
-    if (!m->registrationReady) {
-        printf("\n[Registration] Not ready yet — waiting for NEXT:n.\r\n");
-        return;
-    }
-    m->setState(&m->playState);      // direct member access, no getInstance()
+    if (!m->startPressed) return;
+
+    m->startPressed = false;
+
+    printf("START\r\n");
+    m->setState(&m->playState);
+}
+
+void GameplayState::enter(GameMachine* m) {
+    printf("[Gameplay] Waiting for NEXT:n...\r\n");
 }
 
 void GameplayState::advance(GameMachine* m) {
-    // Actual logic:
-    //   Receive over UART: "NEXT:n"  → send back "PLAYER:n"
-    //   Receive over UART: "NEXT:-1" → send back "ENDGAME", transition to EndGame
-
-    // Mock: simulate receiving NEXT:n from Pi
-    printf("Pi sends NEXT: \r\n");
-    int next = USART6_ReadInt();
-
-    if (next == -1) {
-        printf("[UART] MCU sends Pi: ENDGAME\r\n");
-        m->setState(&m->endState);
-    } else {
-        printf("[UART] MCU sends Pi: PLAYER:%d\r\n", next);
-        m->currentPlayer = next;
+    // ONLY read if data is actually available
+    if (!(USART6->SR & USART_SR_RXNE)) {
+        return;
     }
+
+    char buf[32];
+    int n;
+    USART6_ReadLine(buf, sizeof(buf));
+
+    if (parseNext(buf, &n)) {
+        if (n == -1) {
+            printf("ENDGAME\r\n"); // Send to Pi
+            m->setState(&m->endState);
+        } else {
+            m->currentPlayer = n;
+            printf("PLAYER:%d\r\n", n); // Send to Pi
+        }
+    } else {
+        // This catches "false_start" or other messages from Pi
+        printf("[Gameplay] Ignoring: %s\r\n", buf);
+    }
+    
 }
 
 // ========= EndGame =========
