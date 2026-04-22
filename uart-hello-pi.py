@@ -1,7 +1,7 @@
 import serial
 
 try:
-	ser = serial.Serial("/dev/ttyAMA0", 115200, timeout=1)
+	ser = serial.Serial("/dev/ttyAMA0", 9600, timeout=1)
 	print("Opened UART Successfully\n")
 except Exception as e:
 	print("ERROR: ", e);
