@@ -42,6 +42,30 @@ bool State::read(const std::string& path) {
 
     return true;
 }
+bool State::readMini(const std::string& path) {
+
+    std::ifstream file(path);
+
+    if (!file.is_open()) {
+        std::cerr << "Failed to open state file: " << path << "\n";
+        return false;
+    }
+
+    json j;
+
+    try {
+        file >> j;
+    } catch (...) {
+        std::cerr << "Invalid JSON format\n";
+        return false;
+    }
+
+    // Loop through players
+    
+    minigameWinner      = j.value("winner", 0);
+
+    return true;
+}
 
 
 bool State::write(const std::string& path) {

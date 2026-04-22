@@ -54,6 +54,9 @@ bool GameConfig::write(const std::string& path) {
     j["playerThreePowerUp"] = playerThreePowerUp;
     j["playerFourPowerUp"] = playerFourPowerUp;
 
+    j["winner"] = winner;
+    
+
     std::ofstream file(path);
 
     if (!file.is_open()) {

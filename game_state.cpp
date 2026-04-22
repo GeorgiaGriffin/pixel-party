@@ -39,6 +39,14 @@ static void applyTileAction(int player, const std::string& action) {
         std::cout << "Player " << player << " triggered a minigame!\n";
         // TODO: launch minigame
         system("./pong &");
+        while (gameState.minigameWinner == 0) {
+            gameState.readMini("config.json");
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000*1));
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000*10));
+        system("pkill -x pong");
+        gameState.players[gameState.minigameWinner-1].score += 2;
+
     }
     else if (action == "points+2") {
         gameState.players[player-1].score += 2;

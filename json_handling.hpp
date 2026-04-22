@@ -20,8 +20,10 @@ public:
     int totalActive = 0;
     int winner = 0;
     int winnerScore = 0;
+    int minigameWinner = 0;
 
     bool read(const std::string& path);
+    bool readMini(const std::string& path);
     bool write(const std::string& path);
 
     void updateActivePlayers();

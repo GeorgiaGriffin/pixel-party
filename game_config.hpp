@@ -14,6 +14,7 @@ struct GameConfig {
     int playerTwoPowerUp = 0;
     int playerThreePowerUp = 0;
     int playerFourPowerUp = 0;
+    int winner = 0;
     
     bool read(const std::string& path);
     bool write(const std::string& path);

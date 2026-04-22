@@ -710,13 +710,18 @@ int main(void)
                 break;
 
             case ENDING:
+                config.winner = winner;
+                config.write("config.json");
+
                 for (int i = 0; i < 4; i++)
                 {
                     scores[i] = 0;
                     powerUses[i] = 3;
+                    
 
                 }
                 if (IsKeyPressed(KEY_ENTER))
+                    
                     currentScreen = GAMEPLAY;
                 break;
         }
