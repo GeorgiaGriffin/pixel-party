@@ -35,8 +35,10 @@ static void applyTileAction(int player, const std::string& action) {
         return;
     }
     else if (action == "minigame") {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000*10));
         std::cout << "Player " << player << " triggered a minigame!\n";
         // TODO: launch minigame
+        system("./pong &");
     }
     else if (action == "points+2") {
         gameState.players[player-1].score += 2;
@@ -164,6 +166,8 @@ static void handle_turn(int player) {
 
     // Dice detection
     int dice_val = runDiceDetection();
+    // int dice_val = 3;
+
 
     // Move player with dice 
     gameState.read("state.json");
