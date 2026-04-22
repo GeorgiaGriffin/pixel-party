@@ -1,19 +1,13 @@
-# Compiler
-CC = gcc
-CFLAGS = -O1 -Wall -std=c99
+CXX = g++
 
-# Use pkg-config to find raylib headers/libs
-RAYLIB_FLAGS = $(shell pkg-config --cflags --libs raylib)
+CXXFLAGS = -O1 -Wall -std=c++17
 
-# Target
+SRC = pong.cpp game_config.cpp
 TARGET = pong.exe
-SRC = pong.c
 
-all: $(TARGET)
-
-$(TARGET): $(SRC)
-	$(CC) $(SRC) -o $(TARGET) $(CFLAGS) $(RAYLIB_FLAGS)
-	@echo "Build successful! Run with ./$(TARGET)"
+all:
+	$(CXX) $(SRC) -o $(TARGET) $(CXXFLAGS) \
+	-lraylib -lopengl32 -lgdi32 -lwinmm
 
 clean:
 	rm -f $(TARGET)
