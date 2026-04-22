@@ -37,11 +37,6 @@
 #define LED_1_PIN   2
 #define LED_2_PIN   3
 
-extern volatile uint16_t joystick_data[8];
-
-void dma_setup(void);
-
-
 // Init
 void GPIO_Init(void);
 void USART6_Init(void);
@@ -59,4 +54,3 @@ char USART6_ReadChar(void);
 void USART6_ReadLine(char* buf, int maxlen);
 
 void USART6_SendChar(char c);
-int USART6_ReadInt();

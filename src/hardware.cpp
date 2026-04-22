@@ -1,20 +1,14 @@
 #ifndef HARDWARE_H
 #define HARDWARE_H
-
 // hardware.cpp
 #include "hardware.h"
 #include "game.h"
+#include "main.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-// Array to hold 4 joysticks * 2 axes = 8 values
-// [0]=J1X, [1]=J1Y, [2]=J2X, [3]=J2Y, [4]=J3X, [5]=J3Y, [6]=J4X, [7]=J4Y
-volatile uint16_t joystick_data[8] = {0};
-
 void delay(volatile uint32_t count) {
-    while(count--) {
-        __asm__("nop");
-    }
+    HAL_Delay(count); 
 }
 
 // ---- USART6 ----
@@ -29,35 +23,27 @@ void USART6_Init(void) {
     GPIOC->AFR[0] &= ~((0xF << (6 * 4)) | (0xF << (7 * 4)));
     GPIOC->AFR[0] |=  ((8   << (6 * 4)) | (8   << (7 * 4)));
 
-    // 9600 baud @ 16MHz
-    USART6->BRR = 0x683;
+    
+    USART6->BRR = 0x1388; //0x271; // for 115200 at 72 MHz
+    // old: 0x683; for 9600 baud @ 16MHz
     USART6->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;
 }
 
 void USART6_SendChar(char c) {
     while (!(USART6->SR & USART_SR_TXE));
+    __disable_irq();  // Briefly disable interrupts
     USART6->DR = c;
+    __enable_irq();   // Re-enable
 }
 
-int USART6_ReadInt() {
-    // Block until the Receive Data Register is Not Empty (RXNE)
-    while (!(USART6->SR & USART_SR_RXNE)) {
-        // Wait for data
-    }
-    // Read the data register
-    return (int)(USART6->DR & 0xFF); 
-}
-
-#ifdef PCB
-extern "C" {
-    int _write(int file, char *ptr, int len) {
-        for (int i = 0; i < len; i++) {
-            USART6_SendChar(ptr[i]);
-        }
-        return len;
-    }
-}
-#endif
+// extern "C" {
+//     int _write(int file, char *ptr, int len) {
+//         for (int i = 0; i < len; i++) {
+//             USART6_SendChar(ptr[i]);
+//         }
+//         return len;
+//     }
+// }
 
 // ---- GPIO init ----
 
@@ -68,7 +54,6 @@ void GPIO_Init(void) {
 
     // Buttons on GPIOB: input with pull-up
     uint8_t button_pins[] = {START_BUTTON_PIN, BUTTON1_PIN, BUTTON2_PIN, BUTTON3_PIN, BUTTON4_PIN};
-
     for (int i = 0; i < 5; i++) {
         GPIOB->MODER &= ~(3 << (button_pins[i] * 2));
         GPIOB->PUPDR &= ~(3 << (button_pins[i] * 2));
@@ -150,76 +135,28 @@ void EXTI_Init(void) {
 // ---- ADC init ----
 
 void ADC_Init(void) {
-    // 1. Enable ADC Clock
     RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
 
-    ADC1->CR1 = ADC_CR1_SCAN; // Scan mode for multiple channels
+    ADC1->CR1 = 0;
     ADC1->CR2 = 0;
-
-    // 2. Set sample times to maximum 
     ADC1->SMPR2 |= (7 << (JOY1_X_ADC * 3)) | (7 << (JOY1_Y_ADC * 3));
     ADC1->SMPR2 |= (7 << (JOY2_X_ADC * 3)) | (7 << (JOY2_Y_ADC * 3));
     ADC1->SMPR2 |= (7 << (JOY3_X_ADC * 3)) | (7 << (JOY3_Y_ADC * 3));
     ADC1->SMPR2 |= (7 << (JOY4_X_ADC * 3)) | (7 << (JOY4_Y_ADC * 3));
 
-    // 3. Sequence Length: 8 Conversions
-    ADC1->SQR1 &= ~ADC_SQR1_L; 
-    ADC1->SQR1 |= (7 << 20); 
-
-    // 4. Channel Order
-    // SQR3 handles conversions 1 through 6
-    ADC1->SQR3 = (JOY1_X_ADC << 0)  | 
-                 (JOY1_Y_ADC << 5)  | 
-                 (JOY2_X_ADC << 10) | 
-                 (JOY2_Y_ADC << 15) | 
-                 (JOY3_X_ADC << 20) | 
-                 (JOY3_Y_ADC << 25);
-                 
-    // SQR2 handles conversions 7 and 8
-    ADC1->SQR2 = (JOY4_X_ADC << 0)  | 
-                 (JOY4_Y_ADC << 5);
-
-    // 5. DMA & Continuous Settings 
-    ADC1->CR2 |= ADC_CR2_DMA | ADC_CR2_DDS | ADC_CR2_CONT | ADC_CR2_ADON;
-
-    // Wait a tiny bit for ADC to stabilize
-    for(volatile int i=0; i<1000; i++); 
-
-    // 6. Start Conversion
-    ADC1->CR2 |= ADC_CR2_SWSTART;
+    ADC1->CR2 |= ADC_CR2_ADON;
 }
 
-// ----DMA init--------
+uint16_t ADC_Read(uint8_t channel) {
+    ADC1->SQR3 = channel;
+    ADC1->CR2 |= ADC_CR2_SWSTART;
+    while (!(ADC1->SR & ADC_SR_EOC));
+    return ADC1->DR;
+}
 
-
-void dma_setup(void) {
-    // 1. Enable DMA2 Clock (ADC1 is connected to DMA2)
-    RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
-
-    // 2. Configure DMA2 Stream 0 (ADC1 is on Channel 0)
-    DMA2_Stream0->CR &= ~DMA_SxCR_EN; // Turn off before config
-    while(DMA2_Stream0->CR & DMA_SxCR_EN); 
-
-    // Set Peripheral Address (Source): The ADC Data Register
-    DMA2_Stream0->PAR = (uint32_t)&(ADC1->DR);
-
-    // Set Memory Address (Destination): Our C array
-    DMA2_Stream0->M0AR = (uint32_t)joystick_data;
-
-    // Total items to transfer: 8 (4 Joysticks, X and Y)
-    DMA2_Stream0->NDTR = 8;
-
-    // Configure Control Register (CR)
-    DMA2_Stream0->CR = (0 << 25) |        // Channel 0
-                       (0b01 << 16) |     // Priority Medium
-                       (0b01 << 13) |     // Memory Size 16-bit
-                       (0b01 << 11) |     // Peripheral Size 16-bit
-                       DMA_SxCR_MINC |    // Memory Increment
-                       DMA_SxCR_CIRC |    // Circular Mode
-                       DMA_SxCR_TCIE;     // Enable Interrupt (optional)
-
-    // 3. Enable the DMA Stream
-    DMA2_Stream0->CR |= DMA_SxCR_EN;
+void Joy_Read(uint8_t x_channel, uint8_t y_channel, uint16_t *x, uint16_t *y) {
+    *x = ADC_Read(x_channel);
+    *y = ADC_Read(y_channel);
 }
 
 // ---- LED helpers ----
@@ -237,10 +174,10 @@ extern "C" { // needed to use cpp with platform io
     void EXTI4_IRQHandler(void) {
         if (EXTI->PR & (1 << TOKEN2_PIN)) {
             EXTI->PR |= (1 << TOKEN2_PIN);
-            if (GPIOC->IDR & (1 << TOKEN2_PIN))
-                printf("TOKEN2:0\r\n");  // pin high = removed
-            else
-                printf("TOKEN2:1\r\n");  // pin low = placed (active low with pull-up)
+            if (g_machine) {
+                g_machine->tokenState[1] = (GPIOC->IDR & (1 << TOKEN2_PIN)) ? 0 : 1;
+                g_machine->tokenEvent |= (1 << 1);
+            }
         }
     }
 
@@ -248,24 +185,24 @@ extern "C" { // needed to use cpp with platform io
     void EXTI9_5_IRQHandler(void) {
         if (EXTI->PR & (1 << TOKEN1_PIN)) {
             EXTI->PR |= (1 << TOKEN1_PIN);
-            if (GPIOC->IDR & (1 << TOKEN1_PIN))
-                printf("TOKEN1:0\r\n");
-            else
-                printf("TOKEN1:1\r\n");
+            if (g_machine) {
+                g_machine->tokenState[0] = (GPIOC->IDR & (1 << TOKEN1_PIN)) ? 0 : 1;
+                g_machine->tokenEvent |= (1 << 0);
+            }
         }
         if (EXTI->PR & (1 << TOKEN3_PIN)) {
             EXTI->PR |= (1 << TOKEN3_PIN);
-            if (GPIOC->IDR & (1 << TOKEN3_PIN))
-                printf("TOKEN3:0\r\n");
-            else
-                printf("TOKEN3:1\r\n");
+            if (g_machine) {
+                g_machine->tokenState[2] = (GPIOC->IDR & (1 << TOKEN3_PIN)) ? 0 : 1;
+                g_machine->tokenEvent |= (1 << 2);
+            }
         }
         if (EXTI->PR & (1 << TOKEN4_PIN)) {
             EXTI->PR |= (1 << TOKEN4_PIN);
-            if (GPIOC->IDR & (1 << TOKEN4_PIN))
-                printf("TOKEN4:0\r\n");
-            else
-                printf("TOKEN4:1\r\n");
+            if (g_machine) {
+                g_machine->tokenState[3] = (GPIOC->IDR & (1 << TOKEN4_PIN)) ? 0 : 1;
+                g_machine->tokenEvent |= (1 << 3);
+            }
         }
     }
 
@@ -274,41 +211,47 @@ extern "C" { // needed to use cpp with platform io
     void EXTI15_10_IRQHandler(void) {
         if (EXTI->PR & (1 << BUTTON1_PIN)) {
             EXTI->PR |= (1 << BUTTON1_PIN);
-            printf("BUTTON1 pressed (PB10)\r\n");
         }
         if (EXTI->PR & (1 << BUTTON2_PIN)) {
             EXTI->PR |= (1 << BUTTON2_PIN);
-            printf("BUTTON2 pressed (PB12)\r\n");
         }
         if (EXTI->PR & (1 << BUTTON3_PIN)) {
             EXTI->PR |= (1 << BUTTON3_PIN);
-            printf("BUTTON3 pressed (PB13)\r\n");
         }
         if (EXTI->PR & (1 << BUTTON4_PIN)) {
             EXTI->PR |= (1 << BUTTON4_PIN);
-            printf("BUTTON4 pressed (PB14)\r\n");
         }
         if (EXTI->PR & (1 << START_BUTTON_PIN)) {
             EXTI->PR |= (1 << START_BUTTON_PIN);
-            printf("START BUTTON pressed (PB15)\r\n");
-            if (g_machine) g_machine->advance();
+            if (g_machine) g_machine->startPressed = true;
         }
     }
 }
 
 
 char USART6_ReadChar(void) {
-    while (!(USART6->SR & USART_SR_RXNE));
+    // Continuously check for errors while waiting for a character
+    while (!(USART6->SR & USART_SR_RXNE)) {
+        if (USART6->SR & (USART_SR_ORE | USART_SR_NE | USART_SR_FE)) {
+            uint32_t temp = USART6->SR; 
+            temp = USART6->DR;          
+            (void)temp;
+        }
+    }
     return (char)USART6->DR;
 }
 
 void USART6_ReadLine(char* buf, int maxlen) {
     int i = 0;
-    char c;
-    while ((c = USART6_ReadChar()) != '\r' && i < maxlen - 1) {
+    while (i < maxlen - 1) {
+        char c = USART6_ReadChar();
+        // Ignore stray newlines/nulls at the very start of a command
+        if ((c == '\r' || c == '\n' || c == '\0') && i == 0) continue;
+        // End of line reached
+        if (c == '\r' || c == '\n') break;
+        
         buf[i++] = c;
     }
     buf[i] = '\0';
 }
-
 #endif

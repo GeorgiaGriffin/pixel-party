@@ -1,10 +1,11 @@
 #pragma once
 #include "stm32f4xx.h"
-#include "hardware.h"
-
 
 class GameMachine;
 extern GameMachine* g_machine;  // global so ISRs can reach it
+
+//========= Function declarations =========
+void handleTokenEvents(GameMachine* m);
 
 // ========= Abstract base =========
 class GameState {
@@ -23,7 +24,7 @@ public:
 
 class GameplayState : public GameState {
 public:
-    void enter(GameMachine* m) override {}
+    void enter(GameMachine* m) override;
     void advance(GameMachine* m) override;
 };
 
@@ -41,8 +42,12 @@ public:
     void reset();
     void setState(GameState* s);
     GameState* getState() const { return state; }
+
     int currentPlayer = 1;
     bool registrationReady = false;
+    bool startPressed = false;
+    volatile uint8_t tokenEvent = 0;
+    volatile uint8_t tokenState[4] = {0};
 
     // States are public so state classes and main can reference them
     PlayerRegistrationState regState;
