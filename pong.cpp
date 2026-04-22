@@ -476,6 +476,7 @@ void MovePaddles(void)
     // JOYSTICK INTEGRATION CODE START
 
     const float DEADZONE = 0.2f;
+    config.read("config.json");
 
     // Player 1 --> Gamepad 0
     if (IsGamepadAvailable(0)) {

@@ -25,6 +25,7 @@ public:
     bool read(const std::string& path);
     bool readMini(const std::string& path);
     bool write(const std::string& path);
+    bool writeMini(const std::string& path);
 
     void updateActivePlayers();
     void resetData();

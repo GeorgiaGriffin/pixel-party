@@ -105,6 +105,45 @@ bool State::write(const std::string& path) {
     return true;
 }
 
+bool State::writeMini(const std::string& path) {
+
+    json j;
+
+    j["playerOne"] = players[0].active;
+    j["playerTwo"] = players[1].active;
+    j["playerThree"] = players[2].active;
+    j["playerFour"] = players[3].active;
+
+    j["playerOneMove"] = 0;
+    j["playerTwoMove"] = 0;
+    j["playerThreeMove"] = 0;
+    j["playerFourMove"] = 0;
+
+    j["playerOnePowerUp"] = 0;
+    j["playerTwoPowerUp"] = 0;
+    j["playerThreePowerUp"] = 0;
+    j["playerFourPowerUp"] = 0;
+
+    j["winner"] = 0;
+
+    // WRITE TO TEMP FILE FIRST
+    std::string tempPath = path + ".tmp";
+
+    std::ofstream file(tempPath);
+    if (!file.is_open()) {
+        std::cerr << "Failed to write temp state file\n";
+        return false;
+    }
+
+    file << j.dump(4);
+    file.close();
+
+    // ATOMIC REPLACE
+    std::rename(tempPath.c_str(), path.c_str());
+
+    return true;
+}
+
 
 void State::updateActivePlayers() {
     for (int i = 0; i < NUM_PLAYERS; i++) {

@@ -38,6 +38,8 @@ static void applyTileAction(int player, const std::string& action) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000*10));
         std::cout << "Player " << player << " triggered a minigame!\n";
         // TODO: launch minigame
+        gameState.writeMini("config.json")
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000*1));
         system("./pong &");
         while (gameState.minigameWinner == 0) {
             gameState.readMini("config.json");
