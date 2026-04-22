@@ -89,9 +89,9 @@ static void handle_registration() {
     gameState.resetData();
     gameState.write("state.json");
 
-    // call the graphics to start registration
-    system("pkill -x graphics");
-    system("./graphics &");
+    // call the graphics_release to start registration
+    system("pkill -x graphics_release");
+    system("./graphics_release &");
 
     // every time a player removes token, write to json
     int activeCount = 0;
@@ -151,7 +151,7 @@ static void handle_registration() {
         }
     }
 
-    // move to next graphics state: 1 = board game
+    // move to next graphics_release state: 1 = board game
     gameState.state = 1;
     gameState.write("state.json");
 
@@ -222,7 +222,7 @@ static void handle_endgame() {
 
     gameState.winner = win;
     gameState.winnerScore = bestScore;
-    // Endgame graphics with state 3
+    // Endgame graphics_release with state 3
     gameState.state = 3;
     gameState.write("state.json");
 }
