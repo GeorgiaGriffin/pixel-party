@@ -65,6 +65,7 @@ int main(void)
 
     #ifdef PCB
     USART6_Init();
+    USART1_Init();
     #endif
 
     // 3. Custom / Lower-Level Peripheral Initialization
@@ -232,7 +233,7 @@ void Error_Handler(void) {
 extern "C" {
     int _write(int file, char *ptr, int len) {
         for (int i = 0; i < len; i++) {
-            USART6_SendChar(ptr[i]);
+            USART6_SendChar(ptr[i]); // use USART6 for serial monitor, 1 for Pi
         }
         return len;
     }

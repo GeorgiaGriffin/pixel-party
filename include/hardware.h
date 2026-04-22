@@ -39,7 +39,7 @@
 
 // Init
 void GPIO_Init(void);
-void USART6_Init(void);
+
 void ADC_Init(void);
 void EXTI_Init(void);
 
@@ -50,7 +50,10 @@ void Joy_Read(uint8_t x_channel, uint8_t y_channel, uint16_t *x, uint16_t *y);
 uint16_t ADC_Read(uint8_t channel);
 
 // UART 
+void USART6_Init(void);
 char USART6_ReadChar(void);
 void USART6_ReadLine(char* buf, int maxlen);
-
 void USART6_SendChar(char c);
+
+void USART1_Init(void);      // Add this line
+void USART1_SendChar(char c);

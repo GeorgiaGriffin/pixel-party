@@ -45,6 +45,35 @@ void USART6_SendChar(char c) {
 //     }
 // }
 
+void USART1_Init(void) {
+    // 1. Enable Clocks for GPIOB and USART1
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
+    RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
+
+    // 2. Configure PB6 (TX) and PB3 (RX) as Alternate Function
+    GPIOB->MODER &= ~((3 << (6 * 2)) | (3 << (3 * 2)));
+    GPIOB->MODER |=  ((2 << (6 * 2)) | (2 << (3 * 2)));
+
+    // 3. Set Alternate Function to AF7 (0111)
+    // AFR[0] handles pins 0-7
+    GPIOB->AFR[0] &= ~((0xF << (6 * 4)) | (0xF << (3 * 4)));
+    GPIOB->AFR[0] |=  ((7 << (6 * 4)) | (7 << (3 * 4)));
+
+    // 4. Configure Baud Rate (9600 @ 48MHz)
+    // USART1 is on APB2 (48MHz). 48,000,000 / 9600 = 5000 (0x1388)
+    USART1->BRR = 0x1388;
+
+    // 5. Enable TX, RX, and UART
+    USART1->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;
+}
+
+void USART1_SendChar(char c) {
+    while (!(USART1->SR & USART_SR_TXE));
+    __disable_irq();  // Keep it atomic like USART6
+    USART1->DR = c;
+    __enable_irq();
+}
+
 // ---- GPIO init ----
 
 void GPIO_Init(void) {
