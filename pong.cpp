@@ -448,31 +448,111 @@ void MovePaddles(void)
 {
     int step = CALIBER/2;
     // IsKeyDown(KEY_Q)
-    if (IsKeyDown(KEY_Q)) config.playerTwoMove = -1;
-    else if (IsKeyDown(KEY_A)) config.playerTwoMove = 1;
-    else config.playerTwoMove = 0;    
+    // if (IsKeyDown(KEY_Q)) config.playerTwoMove = -1;
+    // else if (IsKeyDown(KEY_A)) config.playerTwoMove = 1;
+    // else config.playerTwoMove = 0;    
 
-    if (IsKeyDown(KEY_I)) config.playerFourMove = 1;
-    else if (IsKeyDown(KEY_J)) config.playerFourMove = -1;
-    else config.playerFourMove = 0;    
+    // if (IsKeyDown(KEY_I)) config.playerFourMove = 1;
+    // else if (IsKeyDown(KEY_J)) config.playerFourMove = -1;
+    // else config.playerFourMove = 0;    
 
-    if (IsKeyDown(KEY_Z)) config.playerOneMove = -1;
-    else if (IsKeyDown(KEY_X)) config.playerOneMove = 1;
-    else config.playerOneMove = 0;    
+    // if (IsKeyDown(KEY_Z)) config.playerOneMove = -1;
+    // else if (IsKeyDown(KEY_X)) config.playerOneMove = 1;
+    // else config.playerOneMove = 0;    
 
-    if (IsKeyDown(KEY_N)) config.playerThreeMove = -1;
-    else if (IsKeyDown(KEY_M)) config.playerThreeMove = 1;
-    else config.playerThreeMove = 0; 
+    // if (IsKeyDown(KEY_N)) config.playerThreeMove = -1;
+    // else if (IsKeyDown(KEY_M)) config.playerThreeMove = 1;
+    // else config.playerThreeMove = 0; 
 
-    if (IsKeyPressed(KEY_ONE)) config.playerOnePowerUp = 1;
-    else config.playerOnePowerUp = 0;
-    if (IsKeyPressed(KEY_TWO)) config.playerTwoPowerUp = 1;
-    else config.playerTwoPowerUp = 0;
-    if (IsKeyPressed(KEY_THREE)) config.playerThreePowerUp = 1;
-    else config.playerThreePowerUp = 0;
-    if (IsKeyPressed(KEY_FOUR)) config.playerFourPowerUp = 1;
-    else config.playerFourPowerUp = 0;
+    // if (IsKeyPressed(KEY_ONE)) config.playerOnePowerUp = 1;
+    // else config.playerOnePowerUp = 0;
+    // if (IsKeyPressed(KEY_TWO)) config.playerTwoPowerUp = 1;
+    // else config.playerTwoPowerUp = 0;
+    // if (IsKeyPressed(KEY_THREE)) config.playerThreePowerUp = 1;
+    // else config.playerThreePowerUp = 0;
+    // if (IsKeyPressed(KEY_FOUR)) config.playerFourPowerUp = 1;
+    // else config.playerFourPowerUp = 0;
     
+    // JOYSTICK INTEGRATION CODE START
+
+    const float DEADZONE = 0.2f;
+
+    // Player 1 --> Gamepad 0
+    if (IsGamepadAvailable(0)) {
+        float axis = GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X);
+
+        if (axis < -DEADZONE) config.playerOneMove = -1;
+        else if (axis > DEADZONE) config.playerOneMove = 1;
+        else config.playerOneMove = 0;
+
+        config.playerOnePowerUp =
+            IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN);
+    } else {
+        if (IsKeyDown(KEY_Z)) config.playerOneMove = -1;
+        else if (IsKeyDown(KEY_X)) config.playerOneMove = 1;
+        else config.playerOneMove = 0;  
+        if (IsKeyPressed(KEY_ONE)) config.playerOnePowerUp = 1;
+        else config.playerOnePowerUp = 0; 
+    }
+
+    // Player 2 --> Gamepad 1
+    if (IsGamepadAvailable(1)) {
+        float axis = GetGamepadAxisMovement(1, GAMEPAD_AXIS_LEFT_Y);
+
+        if (axis < -DEADZONE) config.playerTwoMove = -1;
+        else if (axis > DEADZONE) config.playerTwoMove = 1;
+        else config.playerTwoMove = 0;
+
+        config.playerTwoPowerUp =
+            IsGamepadButtonPressed(1, GAMEPAD_BUTTON_RIGHT_FACE_DOWN);
+    } else {
+        if (IsKeyDown(KEY_Q)) config.playerTwoMove = -1;
+        else if (IsKeyDown(KEY_A)) config.playerTwoMove = 1;
+        else config.playerTwoMove = 0;     
+        if (IsKeyPressed(KEY_TWO)) config.playerTwoPowerUp = 1;
+        else config.playerTwoPowerUp = 0; 
+    }
+
+    // Player 3 --> Gamepad 2
+    if (IsGamepadAvailable(2)) {
+        float axis = GetGamepadAxisMovement(2, GAMEPAD_AXIS_LEFT_X);
+
+        if (axis < -DEADZONE) config.playerThreeMove = -1;
+        else if (axis > DEADZONE) config.playerThreeMove = 1;
+        else config.playerThreeMove = 0;
+
+        config.playerThreePowerUp =
+            IsGamepadButtonPressed(2, GAMEPAD_BUTTON_RIGHT_FACE_DOWN);
+    } else {
+        if (IsKeyDown(KEY_N)) config.playerThreeMove = -1;
+        else if (IsKeyDown(KEY_M)) config.playerThreeMove = 1;
+        else config.playerThreeMove = 0; 
+        if (IsKeyPressed(KEY_THREE)) config.playerThreePowerUp = 1;
+        else config.playerThreePowerUp = 0;    
+    }
+
+    // Player 4 --> Gamepad 3
+    if (IsGamepadAvailable(3)) {
+        float axis = GetGamepadAxisMovement(3, GAMEPAD_AXIS_LEFT_Y);
+
+        if (axis < -DEADZONE) config.playerFourMove = -1;
+        else if (axis > DEADZONE) config.playerFourMove = 1;
+        else config.playerFourMove = 0;
+
+        config.playerFourPowerUp =
+            IsGamepadButtonPressed(3, GAMEPAD_BUTTON_RIGHT_FACE_DOWN);
+    } else {
+        if (IsKeyDown(KEY_I)) config.playerFourMove = 1;
+        else if (IsKeyDown(KEY_J)) config.playerFourMove = -1;
+        else config.playerFourMove = 0;  
+        if (IsKeyPressed(KEY_FOUR)) config.playerFourPowerUp = 1;
+        else config.playerFourPowerUp = 0;
+    }
+
+    // JOYSTICK INTEGRATION CODE END
+
+
+
     config.write("config.json");
     
     config.read("config.json");
