@@ -223,8 +223,8 @@ static void handle_turn(int player) {
     std::cout << "Player Turn for player " << player << "\n";
 
     // Dice detection
-    // int dice_val = runDiceDetection();
-    int dice_val = 3;
+    int dice_val = runDiceDetection();
+    // int dice_val = 3;
 
 
     // Move player with dice 
@@ -292,7 +292,9 @@ static void handle_endgame() {
 
 
 int main() {
-    if (!uart_init("/dev/ttyUSB0", B9600)) {
+    // if (!uart_init("/dev/SERIAL/BY-ID/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0", B9600)) {
+    system("pkill -o -f ./game");
+    if (!uart_init("/dev/ttyUSB1", B9600)) {
         return 1;
     }
     process_message("REGISTER\n");

@@ -19,6 +19,17 @@ ERROR: Node not found: "MoveBackwardTile" (relative to "/root/Location").
    at: get_node (scene/main/node.cpp:1907)
    GDScript backtrace (most recent call first):
        [0] _ready (res://scripts/location.gd:120)
-here
-value found 0
-endtind
+going into timer
+going into timer
+going into timer
+going into timer
+going into timer
+going into timer
+supposed to be here
+going into timer
+going into timer
+going into timer
+going into timer
+going into timer
+going into timer
+supposed to be here
