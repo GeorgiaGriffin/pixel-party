@@ -637,19 +637,25 @@ void ServeBall(void)
     ball.x = screen.width / 2;
     ball.y = screen.height / 2;
 
-    float speed = CALIBER / 2.0f;
+    int speed = CALIBER / 2;
 
-    // random angle but avoid too vertical / too horizontal
-    float angle = GetRandomValue(-60, 60) * DEG2RAD;
+    // pick random direction components
+    int vx = GetRandomValue(-speed, speed);
+    int vy = GetRandomValue(-speed, speed);
 
-    // randomly flip left/right direction
-    if (GetRandomValue(0, 1)) angle += PI;
+    // enforce minimum magnitude so it's never flat
+    int minComponent = 2; // tweak this (higher = more diagonal)
 
-    ballVelX = (int)(cosf(angle) * speed);
-    ballVelY = (int)(sinf(angle) * speed);
+    if (abs(vx) < minComponent)
+        vx = (vx < 0 ? -minComponent : minComponent);
 
-    // safety: avoid 0 velocity (boring straight line)
-    if (ballVelX == 0) ballVelX = (GetRandomValue(0,1) ? 1 : -1);
+    if (abs(vy) < minComponent)
+        vy = (vy < 0 ? -minComponent : minComponent);
+
+    // normalize to keep consistent speed (optional but nicer)
+    float length = sqrtf(vx*vx + vy*vy);
+    ballVelX = (int)(vx / length * speed);
+    ballVelY = (int)(vy / length * speed);
 }
 
 // --------------------------------------------
@@ -711,7 +717,7 @@ int main(void)
                 break;
 
             case ENDING:
-                config.winner = winner;
+                config.winner = winner + 1;
                 config.write("config.json");
 
                 for (int i = 0; i < 4; i++)
@@ -769,7 +775,7 @@ int main(void)
             if (playerFour) DrawText(TextFormat("P4 Boosts: %d", powerUses[3]), 150, 110, 20, GRAY);
         }
         else {
-             ClearBackground(BLACK);
+            ClearBackground(BLACK);
             DrawText(TextFormat("Winner is Player %d", winner + 1), 120 , 50, 60, GRAY);
             DrawText("Press ENTER to PLAY AGAIN", 120, 420, 20, GRAY);
             DrawText("Press ESCAPE to QUIT", 120, 450, 20, GRAY);

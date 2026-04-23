@@ -35,19 +35,44 @@ static void applyTileAction(int player, const std::string& action) {
         return;
     }
     else if (action == "minigame") {
+        //CHANGES SCREEN TO TELL PLAYERS TO GET TOKEN OFF BOARF
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000*2));
+        gameState.state = 2;
+        gameState.write("state.json");
+        gameState.minigameWinner = 0;
+
+        //continues to read until all players are off the board and in token slot
+        while(gameState.players[0].out == 1 || gameState.players[1].out == 1 || gameState.players[2].out == 1 || gameState.players[3].out == 1) {
+            gameState.read("state.json");
+            std::this_thread::sleep_for(std::chrono::milliseconds(100*1));
+        }
+
+
+        //debug on who triggered the minigam
         std::this_thread::sleep_for(std::chrono::milliseconds(1000*10));
         std::cout << "Player " << player << " triggered a minigame!\n";
         // TODO: launch minigame
-        gameState.writeMini("config.json")
+        //tells minigame who are the active players
+        gameState.writeMini("config.json");
+        //opens minigame
         std::this_thread::sleep_for(std::chrono::milliseconds(1000*1));
         system("./pong &");
-        while (gameState.minigameWinner == 0) {
+        //wait until minigame is done / has a winner
+        while (gameState.minigameWinner <= 0) {
             gameState.readMini("config.json");
             std::this_thread::sleep_for(std::chrono::milliseconds(1000*1));
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000*10));
+        std::cout << "can tell it needs to end the game\n";
+
+        //stupid long visual wait, return to board game path screen,  then close minigame
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000*5));
+        gameState.state = 1;
+        gameState.write("state.json");
+        std::cout << "CHANGES THE STATE\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000*5));
         system("pkill -x pong");
-        gameState.players[gameState.minigameWinner-1].score += 2;
+        gameState.players[gameState.minigameWinner - 1].score += 2;
+        
 
     }
     else if (action == "points+2") {
@@ -175,8 +200,8 @@ static void handle_turn(int player) {
     std::cout << "Player Turn for player " << player << "\n";
 
     // Dice detection
-    int dice_val = runDiceDetection();
-    // int dice_val = 3;
+    // int dice_val = runDiceDetection();
+    int dice_val = 3;
 
 
     // Move player with dice 
@@ -190,6 +215,7 @@ static void handle_turn(int player) {
     // Do tile action
     int pos = gameState.players[player-1].location;
     if (pos < 11) {
+        gameState.write("state.json");
         applyTileAction(player, TILE_ACTIONS[pos]);
         gameState.write("state.json");
     }
