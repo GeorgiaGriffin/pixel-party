@@ -254,43 +254,54 @@ void ResetScores(void);
 // --------------------------------------------
 void InitializeElements(void)
 {
-    InitWindow(800, 600, "Scalable Pong");
+    InitWindow(1280, 1024, "Scalable Pong");  // temp size
+    ToggleFullscreen();                      // go fullscreen
+
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+        // ToggleFullscreen();
+    
     SetTargetFPS(60);
 
-    screen = (Rectangle){0, 0, 800, 600};
-    playableBorder = (Rectangle){CALIBER, CALIBER, 800 - 2*CALIBER, 600 - 2*CALIBER};
+    screen = (Rectangle){0, 0, screenWidth, screenHeight};
+    playableBorder = (Rectangle){CALIBER, CALIBER, screenWidth - 2*CALIBER, screenHeight - 2*CALIBER};
     top = (Rectangle) {screen.x, screen.y, playableBorder.width, playableBorder.y};
     bottom = (Rectangle) {screen.x, playableBorder.height+CALIBER, screen.width, screen.y};
     left = (Rectangle){0, 0, CALIBER, screen.height};
     right = (Rectangle){screen.width - CALIBER, 0, CALIBER, screen.height};
     
     // Ball
-    ball = (Rectangle){400, 300, CALIBER, CALIBER};
+    ball = (Rectangle){
+        screenWidth / 2.0f - CALIBER / 2.0f,
+        screenHeight / 2.0f - CALIBER / 2.0f,
+        CALIBER,
+        CALIBER
+    };
     ballVelX = CALIBER/2;
     ballVelY = CALIBER/2;
 
     ResetScores();
     if (playerTwo == 1) {
         // LEFT paddle
-        paddles[1].rect = (Rectangle){CALIBER, 250, CALIBER, 5*CALIBER};
+        paddles[1].rect = (Rectangle){CALIBER, screenHeight / 2.0f - (5*CALIBER)/2, CALIBER, 5*CALIBER};
         paddles[1].type = VERTICAL;
     }
 
     if (playerFour == 1) {
         // RIGHT paddle
-        paddles[3].rect = (Rectangle){800 - 2*CALIBER, 250, CALIBER, 5*CALIBER};
+        paddles[3].rect = (Rectangle){screenWidth - 2*CALIBER, screenHeight / 2.0f - (5*CALIBER)/2, CALIBER, 5*CALIBER};
         paddles[3].type = VERTICAL;
     }
 
     if (playerThree == 1) {
         // BOTTOM paddle
-        paddles[2].rect = (Rectangle){350, 600 - 2*CALIBER, 5*CALIBER, CALIBER};
+        paddles[2].rect = (Rectangle){screenWidth / 2.0f - (5*CALIBER)/2, screenHeight - 2*CALIBER, 5*CALIBER, CALIBER};
         paddles[2].type = HORIZONTAL;
     }
 
     if (playerOne == 1) {
         // TOP paddle
-        paddles[0].rect = (Rectangle){350, CALIBER, 5*CALIBER, CALIBER};
+        paddles[0].rect = (Rectangle){screenWidth / 2.0f - (5*CALIBER)/2, CALIBER, 5*CALIBER, CALIBER};
         paddles[0].type = HORIZONTAL;
     }
 }
@@ -634,8 +645,8 @@ void MovePaddles(void)
 // }
 void ServeBall(void)
 {
-    ball.x = screen.width / 2;
-    ball.y = screen.height / 2;
+    ball.x = screen.width / 2 - CALIBER / 2;
+    ball.y = screen.height / 2 - CALIBER / 2;
 
     int speed = CALIBER / 2;
 
@@ -739,8 +750,11 @@ int main(void)
 
         if (currentScreen == TITLE)
         {
-            DrawText("SCALABLE PONG", 200, 100, 40, GRAY);
-            DrawText("Press ENTER to Start", 250, 300, 20, GRAY);
+            const char* title = "SCALABLE PONG";
+            int textWidth = MeasureText(title, 40);
+
+            DrawText(title, screen.width/2 - textWidth/2, screen.height/4, 40, GRAY);
+            DrawText("Press ENTER to Start", screen.width/2 - textWidth/2, screen.height/4, 20, GRAY);
         }
         else if (currentScreen == GAMEPLAY)
         {
@@ -776,9 +790,8 @@ int main(void)
         }
         else {
             ClearBackground(BLACK);
-            DrawText(TextFormat("Winner is Player %d", winner + 1), 120 , 50, 60, GRAY);
-            DrawText("Press ENTER to PLAY AGAIN", 120, 420, 20, GRAY);
-            DrawText("Press ESCAPE to QUIT", 120, 450, 20, GRAY);
+            DrawText(TextFormat("Winner is Player %d", winner + 1), screen.width/2 - MeasureText("Winner is Player 2", 60)/2 , screen.height/3, 60, GRAY);
+            
         }
 
         EndDrawing();
