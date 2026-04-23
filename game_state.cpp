@@ -214,7 +214,7 @@ static void handle_registration() {
     // move to next graphics_release state: 1 = board game
     gameState.state = 1;
     gameState.write("state.json");
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000 * 10));
     uart_send("NEXT:" + std::to_string(firstPlayer) + "\n");
 }
 
@@ -224,7 +224,7 @@ static void handle_turn(int player) {
 
     // Dice detection
     // int dice_val = runDiceDetection();
-    int dice_val = 6;
+    int dice_val = 3;
 
 
     // Move player with dice 
@@ -292,7 +292,7 @@ static void handle_endgame() {
 
 
 int main() {
-    if (!uart_init("/dev/ttyUSB1", B9600)) {
+    if (!uart_init("/dev/ttyUSB0", B9600)) {
         return 1;
     }
     process_message("REGISTER\n");

@@ -64,6 +64,26 @@ std::string uart_receive() {
         }
     }
 
+    // static std::string buffer;  // persists across calls
+    // char c;
+    // int n;
+
+    // while ((n = read(uart_fd, &c, 1)) > 0) {
+    //     if (c == '\n') {
+    //         std::string line = buffer;
+    //         buffer.clear();
+
+    //         if (!line.empty() && line.back() == '\r') {
+    //             line.pop_back();
+    //         }
+
+    //         std::cout << "RECEIVING: " << line << std::endl;
+    //         return line;  // return ONE complete message
+    //     } else {
+    //         buffer += c;
+    //     }
+    // }
+
     // If n is -1, it just means no more bytes are available right now.
     // We return "" so the game can draw the next frame.
     return "";
