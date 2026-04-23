@@ -4,7 +4,12 @@
 #include <iostream>
 #include <string>
 #include <termios.h>
+#include <vector>
+#include <sstream>
+#include "game_config.hpp"
 
+// Add this line so uart.cpp knows 'config' exists in pong.cpp
+extern GameConfig config;
 
 static int uart_fd;  // shared internally
 
@@ -16,10 +21,10 @@ bool uart_init(const std::string& device, int baud) {
         return false;
     }
 
+    // fcntl(uart_fd, F_SETFL, 0); // blocking mode
 
-    fcntl(uart_fd, F_SETFL, 0); // blocking mode
-
-
+RECEIVING: 0,0,0,0,0,0,0,0,0,0,0,0
+RECEIVING: 0,0,0,0,0,0,0,0,0,0,0,0
     struct termios options;
     tcgetattr(uart_fd, &options);
 
@@ -54,7 +59,7 @@ std::string uart_receive() {
 
             if (!line.empty() && line.back() == '\r') {
                 line.pop_back();
-            }
+            }powerActive[i] = false;
 
             // 👇 PUT PRINT HERE (ONLY ON COMPLETE MESSAGE)
             std::cout << "RECEIVING: " << line << std::endl;
@@ -81,4 +86,37 @@ void uart_send(const std::string& msg) {
 
 void uart_close() {
     close(uart_fd);
+}
+
+void ParseUartInput(std::string line) {
+    if (line.empty()) return;
+
+    std::stringstream ss(line);
+    std::string segment;
+    std::vector<int> values;
+
+    while (std::getline(ss, segment, ',')) {
+        try {
+            values.push_back(std::stoi(segment));
+        } catch (...) { return; } 
+    }
+
+    // Index mapping for the 12-integer CSV
+    if (values.size() >= 12) {
+        // Player 1 (Top - Horizontal) uses J1x and B1
+        config.playerOneMove     = values[0]; 
+        config.playerOnePowerUp   = values[8];
+
+        // Player 2 (Left - Vertical) uses J2y and B2
+        config.playerTwoMove     = values[3]; 
+        config.playerTwoPowerUp   = values[9];
+
+        // Player 3 (Bottom - Horizontal) uses J3x and B3
+        config.playerThreeMove   = values[4]; 
+        config.playerThreePowerUp = values[10];
+
+        // Player 4 (Right - Vertical) uses J4y and B4
+        config.playerFourMove    = values[7]; 
+        config.playerFourPowerUp  = values[11];
+    }
 }

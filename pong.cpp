@@ -3,200 +3,6 @@
 // *   Angel G. Cuartero. 2019-03-07.
 // ********************************************************************************************/
 
-// #include "raylib.h"
-// #include <stdio.h>
-// #include <stdlib.h>
-
-// #define CALIBER 12
-
-// // User-defined types.
-// typedef enum GameScreen { TITLE = 0, GAMEPLAY, ENDING } GameScreen;
-// typedef enum Direction { UP = 0, DOWN } Direction;
-
-// // Global variables. They are global indeed.
-// Rectangle screen, playableBorder, top, bottom, ball, leftRacket, rightRacket;
-// int rightScore = 0, leftScore = 0, scoreWidth, winner;
-
-// // Prototypes.
-// void InitializeElements(void);
-// void ServeBall(void);
-// void MoveBall(void);
-// void MoveRacket(Rectangle *pRacket, Direction pDir);
-
-// // Initialize window and primary game elements.
-// // --------------------------------------------
-// void InitializeElements(void)
-// {
-//     InitWindow(0, 0, "Pong");
-//     // Calculate size, position and inner limits of window.
-//     screen = (Rectangle){0, 0, GetScreenWidth()/2, GetScreenHeight()/2};
-//     playableBorder = (Rectangle){CALIBER, CALIBER, screen.width - (2*CALIBER) , screen.height - (2*CALIBER)};
-//     top = (Rectangle) {screen.x, screen.y, playableBorder.width, playableBorder.y};
-//     bottom = (Rectangle) {screen.x, playableBorder.height+CALIBER, screen.width, screen.y};
-//     SetWindowPosition(screen.width/2, screen.height/2);
-//     SetWindowSize(screen.width, screen.height);
-//     SetTargetFPS(60);
-
-//     // Initialize elements.
-//     ball = (Rectangle) {5*CALIBER, playableBorder.height, CALIBER, CALIBER};
-//     leftRacket = (Rectangle) {playableBorder.x + CALIBER, playableBorder.height/2, CALIBER, 5*CALIBER};
-//     rightRacket = (Rectangle) {playableBorder.width - CALIBER, playableBorder.height/2, CALIBER, 5*CALIBER};
-//     scoreWidth = MeasureText("00", 60);
-// }
-
-// // Manage ball movement.
-// // ---------------------
-// void MoveBall(void)
-// {
-//     static int xx = CALIBER/2;
-//     static int yy = CALIBER/2;
-
-//     // Check collision with rackets and ball has not surpassed rackets.
-//     if ((CheckCollisionRecs(ball, leftRacket) && ball.x < leftRacket.x + leftRacket.width) ||
-//         (CheckCollisionRecs(ball, rightRacket) && ball.x > rightRacket.x - rightRacket.width))
-//         xx = -xx;
-//     else
-//         if (CheckCollisionRecs(ball, top) || CheckCollisionRecs(ball, bottom))
-//             yy = -yy;
-//         else
-//         {
-//             // Score.
-//             if (ball.x < screen.x)
-//             {
-//                 ++rightScore;
-//                 ServeBall();
-//             }
-//             else if (ball.x > screen.width)
-//             {
-//                 ++leftScore;
-//                 ServeBall();
-//             }
-//         }
-
-//     // Move ball.
-//     ball.x += xx;
-//     ball.y += yy;
-// }
-
-// // Manage racket movement.
-// // -----------------------
-// void MoveRacket(Rectangle *pRacket, Direction pDir)
-// {
-//     int step = (pDir == UP)? -CALIBER/2: CALIBER/2;
-
-//     if ((CheckCollisionRecs(top, *pRacket) && pDir == UP) ||
-//         (CheckCollisionRecs(bottom, *pRacket) && pDir == DOWN))
-//             return;
-//     pRacket->y += step;
-// }
-
-// // Serve ball after scoring.
-// // -------------------------
-// void ServeBall(void)
-// {
-//     ball.x = playableBorder.width/2;
-//     ball.y = GetRandomValue(playableBorder.y + 10, playableBorder.height);
-// }
-
-// // Start game.
-// // -----------
-// int main(void)
-// {
-//     GameScreen currentScreen = TITLE;
-//     InitializeElements();
-
-//     // Main loop.
-//     while (!WindowShouldClose()) // Check ESC key.
-//     {
-//         // Updating.
-//         switch(currentScreen)
-//         {
-//             case TITLE:
-//             {
-//                 if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
-//                     currentScreen = GAMEPLAY;
-//             } break;
-//             case GAMEPLAY:
-//             {
-//                 MoveBall();
-
-//                 // Check racket keys.
-//                 if (IsKeyDown(KEY_Q))
-//                     MoveRacket(&leftRacket, UP);
-//                 else if (IsKeyDown(KEY_A))
-//                     MoveRacket(&leftRacket, DOWN);
-
-//                 if (IsKeyDown(KEY_I))
-//                     MoveRacket(&rightRacket, UP);
-//                 else if (IsKeyDown(KEY_J))
-//                     MoveRacket(&rightRacket, DOWN);
-
-//                 if ((leftScore >= 11) || (rightScore >= 11))
-//                 {
-//                     if (abs(leftScore - rightScore) < 2)
-//                         break;
-//                     winner = (leftScore > rightScore)? 1 : 2;
-//                     rightScore = leftScore = 0; // Reset Score.
-//                     currentScreen = ENDING;
-//                 }
-//             } break;
-//             case ENDING:
-//             {
-//                 if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
-//                     currentScreen = GAMEPLAY;
-//             } break;
-//             default: break;
-//         }
-
-//         // Rendering.
-//         BeginDrawing();
-//         switch(currentScreen)
-//         {
-//             case TITLE:
-//             {
-//                 ClearBackground(BLACK);
-//                 DrawText("PONG", 120, 20, 120, GRAY);
-//                 DrawText("Based on Atari PONG", 120, 140, 60, GRAY);
-//                 DrawText("Programmed with Raylib by Angel G. Cuartero", 120, 220, 20, GRAY);
-//                 DrawText("Player 1: Q, A", 120, 390, 20, GRAY);
-//                 DrawText("Player 2: I, J", 120, 420, 20, GRAY);
-//                 DrawText("Press ENTER to PLAY", 120, 450, 20, GRAY);
-//                 DrawText("Press ESCAPE to QUIT", 120, 480, 20, GRAY);
-
-//             } break;
-//             case GAMEPLAY:
-//             {
-//                 // Draw court.
-//                 DrawRectangle(screen.x, screen.y, screen.width, screen.height, GRAY);
-//                 DrawRectangle(screen.x, playableBorder.y, screen.width, playableBorder.height, BLACK);
-//                 DrawRectangle((screen.width/2) - 5, playableBorder.y, CALIBER, playableBorder.height, GRAY);
-//                 // Draw score.
-//                 DrawText(TextFormat("%02d", leftScore), (screen.width/2) - 50 - scoreWidth, 50, 60, GRAY);
-//                 DrawText(TextFormat("%02d", rightScore), (screen.width/2) + 50, 50, 60, GRAY);
-//                 // Draw ball.
-//                 DrawRectangle(ball.x, ball.y, ball.width, ball.height, WHITE);
-//                 // Draw rackets.
-//                 DrawRectangle(leftRacket.x, leftRacket.y, leftRacket.width, leftRacket.height, WHITE);
-//                 DrawRectangle(rightRacket.x, rightRacket.y, rightRacket.width, rightRacket.height, WHITE);
-//             } break;
-//             case ENDING:
-//             {
-//                 ClearBackground(BLACK);
-//                 DrawText(TextFormat("Winner is Player %d", winner), 120 , 50, 60, GRAY);
-//                 DrawText("Press ENTER to PLAY AGAIN", 120, 420, 20, GRAY);
-//                 DrawText("Press ESCAPE to QUIT", 120, 450, 20, GRAY);
-//             } break;
-//             default: break;
-//             }
-//         EndDrawing();
-//     }
-
-//     CloseWindow();
-//     return 0;
-// }
-
-
-
 /*******************************************************************************************
 *   Scalable Pong (2–4 players)
 ********************************************************************************************/
@@ -204,7 +10,12 @@
 #include "raylib.h"
 #include <stdlib.h>
 #include <math.h>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <iostream>
 #include "game_config.hpp"
+#include "uart.h" 
 
 #define CALIBER 12
 #define MAX_PLAYERS 4
@@ -229,18 +40,11 @@ int powerUses[MAX_PLAYERS] = {3,3,3,3};
 float powerTimer[MAX_PLAYERS] = {0};
 bool powerActive[MAX_PLAYERS] = {false};
 
-Rectangle screen, playableBorder, ball, top, bottom;
-Rectangle left, right;
+Rectangle screen, playableBorder, ball, top, bottom, left, right;
 Paddle paddles[MAX_PLAYERS];
 int scores[MAX_PLAYERS];
-// int playerCount = 4; // change: 2, 3, or 4
-int playerOne;
-int playerTwo;
-int playerThree;
-int playerFour;
-// int playerCount = playerOne + playerTwo + playerThree + playerFour; // change: 2, 3, or 4
+int playerOne, playerTwo, playerThree, playerFour;
 int winner = 0;
-
 int ballVelX, ballVelY;
 GameConfig config;
 
@@ -331,81 +135,6 @@ void MoveBall(void)
         ballVelX = -ballVelX;
     
 
-    // if (playerCount == 4) {
-    //     // Wall scoring
-    //     if (ball.x < 0)
-    //     {
-    //         scores[1]++; // left missed
-    //         scores[2]++;
-    //         scores[3]++;
-    //         ServeBall();
-    //     }
-    //     else if (ball.x > screen.width)
-    //     {
-    //         scores[0]++; // right missed
-    //         scores[2]++;
-    //         scores[3]++;
-    //         ServeBall();
-    //     }
-    //     if (ball.y > screen.height)
-    //     {
-    //         scores[0]++; // bottom missed
-    //         scores[1]++;
-    //         scores[3]++;
-    //         ServeBall();
-    //     }
-    //     if (ball.y < 0)
-    //     {
-    //         scores[0]++; // top missed
-    //         scores[1]++;
-    //         scores[2]++;
-    //         ServeBall();
-    //     }
-    // }
-    // else if (playerCount == 3) {
-    //     // Wall scoring
-    //     if (CheckCollisionRecs(ball, top)) ballVelY = -ballVelY;
-    //     else {
-    //         if (ball.x < 0)
-    //         {
-    //             scores[1]++; // left missed
-    //             scores[2]++;
-    //             ServeBall();
-    //         }
-    //         else if (ball.x > screen.width)
-    //         {
-    //             scores[0]++; // right missed
-    //             scores[2]++;
-    //             ServeBall();
-    //         }
-    //         if (ball.y > screen.height)
-    //         {
-    //             scores[0]++; // bottom missed
-    //             scores[1]++;
-    //             ServeBall();
-    //         }
-    //     }
-        
-    // }
-    // else {
-    //     // Wall scoring
-    //     if (CheckCollisionRecs(ball, top) || (CheckCollisionRecs(ball, bottom))) ballVelY = -ballVelY;
-    //     else {
-    //         if (ball.x < 0)
-    //         {
-    //             scores[1]++; // left missed
-
-    //             ServeBall();
-    //         }
-    //         else if (ball.x > screen.width)
-    //         {
-    //             scores[0]++; // right missed
-
-    //             ServeBall();
-    //         }
-    //     }
-    // }
-
     if (playerOne == 1) {
         
         if (ball.y < 0) {
@@ -455,194 +184,78 @@ void MoveBall(void)
 }
 
 // --------------------------------------------
-void MovePaddles(void)
-{
-    int step = CALIBER/2;
-    // IsKeyDown(KEY_Q)
-    // if (IsKeyDown(KEY_Q)) config.playerTwoMove = -1;
-    // else if (IsKeyDown(KEY_A)) config.playerTwoMove = 1;
-    // else config.playerTwoMove = 0;    
+void MovePaddles(void) {
+    int step = CALIBER / 2;
 
-    // if (IsKeyDown(KEY_I)) config.playerFourMove = 1;
-    // else if (IsKeyDown(KEY_J)) config.playerFourMove = -1;
-    // else config.playerFourMove = 0;    
-
-    // if (IsKeyDown(KEY_Z)) config.playerOneMove = -1;
-    // else if (IsKeyDown(KEY_X)) config.playerOneMove = 1;
-    // else config.playerOneMove = 0;    
-
-    // if (IsKeyDown(KEY_N)) config.playerThreeMove = -1;
-    // else if (IsKeyDown(KEY_M)) config.playerThreeMove = 1;
-    // else config.playerThreeMove = 0; 
-
-    // if (IsKeyPressed(KEY_ONE)) config.playerOnePowerUp = 1;
-    // else config.playerOnePowerUp = 0;
-    // if (IsKeyPressed(KEY_TWO)) config.playerTwoPowerUp = 1;
-    // else config.playerTwoPowerUp = 0;
-    // if (IsKeyPressed(KEY_THREE)) config.playerThreePowerUp = 1;
-    // else config.playerThreePowerUp = 0;
-    // if (IsKeyPressed(KEY_FOUR)) config.playerFourPowerUp = 1;
-    // else config.playerFourPowerUp = 0;
+    // Drain the buffer to get the MOST RECENT packet
+    std::string latestLine = "";
+    std::string currentLine = "";
     
-    // JOYSTICK INTEGRATION CODE START
-
-    const float DEADZONE = 0.2f;
-    config.read("config.json");
-
-    // Player 1 --> Gamepad 0
-    if (IsGamepadAvailable(0)) {
-        float axis = GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X);
-
-        if (axis < -DEADZONE) config.playerOneMove = -1;
-        else if (axis > DEADZONE) config.playerOneMove = 1;
-        else config.playerOneMove = 0;
-
-        config.playerOnePowerUp =
-            IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN);
-    } else {
-        if (IsKeyDown(KEY_Z)) config.playerOneMove = -1;
-        else if (IsKeyDown(KEY_X)) config.playerOneMove = 1;
-        else config.playerOneMove = 0;  
-        if (IsKeyPressed(KEY_ONE)) config.playerOnePowerUp = 1;
-        else config.playerOnePowerUp = 0; 
+    // Grab every completed line currently waiting in the serial buffer
+    while (true) {
+        currentLine = uart_receive();
+        if (currentLine.empty()) break; 
+        latestLine = currentLine;
     }
 
-    // Player 2 --> Gamepad 1
-    if (IsGamepadAvailable(1)) {
-        float axis = GetGamepadAxisMovement(1, GAMEPAD_AXIS_LEFT_Y);
-
-        if (axis < -DEADZONE) config.playerTwoMove = -1;
-        else if (axis > DEADZONE) config.playerTwoMove = 1;
-        else config.playerTwoMove = 0;
-
-        config.playerTwoPowerUp =
-            IsGamepadButtonPressed(1, GAMEPAD_BUTTON_RIGHT_FACE_DOWN);
-    } else {
-        if (IsKeyDown(KEY_Q)) config.playerTwoMove = -1;
-        else if (IsKeyDown(KEY_A)) config.playerTwoMove = 1;
-        else config.playerTwoMove = 0;     
-        if (IsKeyPressed(KEY_TWO)) config.playerTwoPowerUp = 1;
-        else config.playerTwoPowerUp = 0; 
+    // Only parse the very last complete line we received
+    if (!latestLine.empty()) {
+        ParseUartInput(latestLine);
     }
 
-    // Player 3 --> Gamepad 2
-    if (IsGamepadAvailable(2)) {
-        float axis = GetGamepadAxisMovement(2, GAMEPAD_AXIS_LEFT_X);
-
-        if (axis < -DEADZONE) config.playerThreeMove = -1;
-        else if (axis > DEADZONE) config.playerThreeMove = 1;
-        else config.playerThreeMove = 0;
-
-        config.playerThreePowerUp =
-            IsGamepadButtonPressed(2, GAMEPAD_BUTTON_RIGHT_FACE_DOWN);
-    } else {
-        if (IsKeyDown(KEY_N)) config.playerThreeMove = -1;
-        else if (IsKeyDown(KEY_M)) config.playerThreeMove = 1;
-        else config.playerThreeMove = 0; 
-        if (IsKeyPressed(KEY_THREE)) config.playerThreePowerUp = 1;
-        else config.playerThreePowerUp = 0;    
+    // 2. Process Player Movement
+    // Top Paddle (Player 1) - Horizontal
+    if (playerOne && config.playerOneMove != 0) {
+        paddles[0].rect.x += config.playerOneMove * step * (powerActive[0] ? POWERUP_SPEED_MULT : 1);
+        if (paddles[0].rect.x <= CALIBER) paddles[0].rect.x = CALIBER;
+        if (paddles[0].rect.x >= playableBorder.width - paddles[0].rect.width + CALIBER) 
+            paddles[0].rect.x = playableBorder.width - paddles[0].rect.width + CALIBER;
     }
 
-    // Player 4 --> Gamepad 3
-    if (IsGamepadAvailable(3)) {
-        float axis = GetGamepadAxisMovement(3, GAMEPAD_AXIS_LEFT_Y);
-
-        if (axis < -DEADZONE) config.playerFourMove = -1;
-        else if (axis > DEADZONE) config.playerFourMove = 1;
-        else config.playerFourMove = 0;
-
-        config.playerFourPowerUp =
-            IsGamepadButtonPressed(3, GAMEPAD_BUTTON_RIGHT_FACE_DOWN);
-    } else {
-        if (IsKeyDown(KEY_I)) config.playerFourMove = 1;
-        else if (IsKeyDown(KEY_J)) config.playerFourMove = -1;
-        else config.playerFourMove = 0;  
-        if (IsKeyPressed(KEY_FOUR)) config.playerFourPowerUp = 1;
-        else config.playerFourPowerUp = 0;
+    // Left Paddle (Player 2) - Vertical
+    if (playerTwo && config.playerTwoMove != 0) {
+        paddles[1].rect.y += config.playerTwoMove * step * (powerActive[1] ? POWERUP_SPEED_MULT : 1);
+        if (paddles[1].rect.y <= CALIBER) paddles[1].rect.y = CALIBER;
+        if (paddles[1].rect.y >= playableBorder.height - paddles[1].rect.height + CALIBER) 
+            paddles[1].rect.y = playableBorder.height - paddles[1].rect.height + CALIBER;
     }
 
-    // JOYSTICK INTEGRATION CODE END
-
-
-
-    config.write("config.json");
-    
-    config.read("config.json");
-
-
-    if (playerTwo == 1)
-    {
-        // LEFT (Q/A)
-        if (config.playerTwoMove != 0) paddles[1].rect.y += config.playerTwoMove * step * (powerActive[1] ? POWERUP_SPEED_MULT : 1);
-        if (paddles[1].rect.y <= 0) paddles[1].rect.y = 0;
-        if (paddles[1].rect.y >= playableBorder.height - (paddles[1].rect.height / 2)) paddles[1].rect.y = playableBorder.height - (paddles[1].rect.height / 2);
+    // Bottom Paddle (Player 3) - Horizontal
+    if (playerThree && config.playerThreeMove != 0) {
+        paddles[2].rect.x += config.playerThreeMove * step * (powerActive[2] ? POWERUP_SPEED_MULT : 1);
+        if (paddles[2].rect.x <= CALIBER) paddles[2].rect.x = CALIBER;
+        if (paddles[2].rect.x >= playableBorder.width - paddles[2].rect.width + CALIBER) 
+            paddles[2].rect.x = playableBorder.width - paddles[2].rect.width + CALIBER;
     }
 
-    if (playerFour == 1) {
-        // RIGHT (I/J)
-        if (config.playerFourMove != 0) paddles[3].rect.y += config.playerFourMove * step * (powerActive[3] ? POWERUP_SPEED_MULT : 1);
-        if (paddles[3].rect.y <= 0) paddles[3].rect.y = 0;
-        if (paddles[3].rect.y >= playableBorder.height - (paddles[3].rect.height / 2)) paddles[3].rect.y = playableBorder.height - (paddles[3].rect.height / 2);
+    // Right Paddle (Player 4) - Vertical
+    if (playerFour && config.playerFourMove != 0) {
+        paddles[3].rect.y += config.playerFourMove * step * (powerActive[3] ? POWERUP_SPEED_MULT : 1);
+        if (paddles[3].rect.y <= CALIBER) paddles[3].rect.y = CALIBER;
+        if (paddles[3].rect.y >= playableBorder.height - paddles[3].rect.height + CALIBER) 
+            paddles[3].rect.y = playableBorder.height - paddles[3].rect.height + CALIBER;
     }
 
+    // 3. Process Power-ups for all players
+    int buttons[4] = {config.playerOnePowerUp, config.playerTwoPowerUp, config.playerThreePowerUp, config.playerFourPowerUp};
+    bool activeStates[4] = {playerOne != 0, playerTwo != 0, playerThree != 0, playerFour != 0};
 
-    if (playerThree == 1)
-    {
-        // BOTTOM (N/M)
-        if (config.playerThreeMove != 0) paddles[2].rect.x += config.playerThreeMove * step * (powerActive[2] ? POWERUP_SPEED_MULT : 1);
-        if (paddles[2].rect.x <= 0) paddles[2].rect.x = 0;
-        if (paddles[2].rect.x >= playableBorder.width - (paddles[2].rect.width / 2)) paddles[2].rect.x = playableBorder.width - (paddles[2].rect.width / 2);
-
-    }
-
-    if (playerOne == 1)
-    {
-        // TOP (Z/X)
-        if (config.playerOneMove != 0) paddles[0].rect.x += config.playerOneMove * step * (powerActive[0] ? POWERUP_SPEED_MULT : 1);
-        if (paddles[0].rect.x <= 0) paddles[0].rect.x = 0;
-        if (paddles[0].rect.x >= playableBorder.width - (paddles[0].rect.width / 2)) paddles[0].rect.x = playableBorder.width - (paddles[0].rect.width / 2);
-
-    }
-    // Activate powerups
-    if (config.playerOnePowerUp && playerOne && powerUses[0] > 0 && !powerActive[0]) {
-        powerActive[0] = true;
-        powerTimer[0] = POWERUP_DURATION;
-        powerUses[0]--;
-    }
-    if (config.playerTwoPowerUp && playerTwo && powerUses[1] > 0 && !powerActive[1]) {
-        powerActive[1] = true;
-        powerTimer[1] = POWERUP_DURATION;
-        powerUses[1]--;
-    }
-    if (config.playerThreePowerUp && playerThree && powerUses[2] > 0 && !powerActive[2]) {
-        powerActive[2] = true;
-        powerTimer[2] = POWERUP_DURATION;
-        powerUses[2]--;
-    }
-    if (config.playerFourPowerUp && playerFour && powerUses[3] > 0 && !powerActive[3]) {
-        powerActive[3] = true;
-        powerTimer[3] = POWERUP_DURATION;
-        powerUses[3]--;
-    }
     for (int i = 0; i < MAX_PLAYERS; i++) {
+        // Trigger if button is pressed (1), player is in game, has uses, and not already active
+        if (buttons[i] == 1 && activeStates[i] && powerUses[i] > 0 && !powerActive[i]) {
+            powerActive[i] = true;
+            powerTimer[i] = POWERUP_DURATION;
+            powerUses[i]--;
+        }
+
+        // Handle active timer countdown
         if (powerActive[i]) {
             powerTimer[i] -= GetFrameTime();
-            if (powerTimer[i] <= 0) {
-                powerActive[i] = false;
-            }
+            if (powerTimer[i] <= 0) powerActive[i] = false;
         }
     }
 }
 
-// --------------------------------------------
-// void ServeBall(void)
-// {
-//     ball.x = screen.width / 2;
-//     ball.y = screen.height / 2;
-
-//     ballVelX = (GetRandomValue(0,1) ? 1 : -1) * CALIBER/2;
-//     ballVelY = (GetRandomValue(0,1) ? 1 : -1) * CALIBER/2;
-// }
 void ServeBall(void)
 {
     ball.x = screen.width / 2 - CALIBER / 2;
@@ -672,20 +285,33 @@ void ServeBall(void)
 // --------------------------------------------
 int main(void)
 {
+    // 1. Initial State Setup
     GameScreen currentScreen = GAMEPLAY;
     
+    // Read the initial player assignments from config
     config.read("config.json");
 
+    // Map configuration to local variables
     playerOne = config.playerOne;
     playerTwo = config.playerTwo;
     playerThree = config.playerThree;
     playerFour = config.playerFour;
 
-    InitializeElements();
+    // 2. UART Initialization (Matching your example exactly)
+    // Using /dev/ttyUSB0 and 9600 baud as requested
+    if (!uart_init("/dev/ttyUSB0", 9600)) {
+        // Using standard I/O since this is a basic setup
+        std::cerr << "Failed to open UART on /dev/ttyUSB0" << std::endl;
+        return 1;
+    }
 
+    // 3. Raylib Window and Element Initialization
+    InitializeElements(); // Sets up screen, paddles, and ball
+
+    // 4. Main Game Loop
     while (!WindowShouldClose())
     {
-        // Update
+        // --- UPDATE LOGIC ---
         switch (currentScreen)
         {
             case TITLE:
@@ -694,37 +320,33 @@ int main(void)
                 break;
 
             case GAMEPLAY:
-                MoveBall();
-                MovePaddles();
+                MoveBall();    // Handles physics and collisions
+                MovePaddles(); // This now calls uart_receive() and ParseUartInput()
 
-                // winner = 0;
-
-                if ((scores[0] >= 11) || (scores[1] >= 11) || (scores[2] >= 11) || (scores[3] >= 11)){
+                // Check for a winner (first to 11 points)
+                if ((scores[0] >= 11) || (scores[1] >= 11) || (scores[2] >= 11) || (scores[3] >= 11)) {
                     winner = -1;
+                    for (int i = 0; i < MAX_PLAYERS; i++) {
+                        // Check if the player is active
+                        bool isActive = (i == 0 && playerOne) || (i == 1 && playerTwo) || 
+                                        (i == 2 && playerThree) || (i == 3 && playerFour);
+                        
+                        if (!isActive) continue;
 
-                    for (int i = 0; i < 4; i++)
-                    {
-                        if ((i == 0 && !playerOne) ||
-                            (i == 1 && !playerTwo) ||
-                            (i == 2 && !playerThree) ||
-                            (i == 3 && !playerFour))
-                            continue;
-
-                        if (winner == -1 || scores[i] > scores[winner])
+                        if (winner == -1 || scores[i] > scores[winner]) {
                             winner = i;
+                        }
                     }
 
-                    for (int i = 0; i < 4; i++)
-                    {
-                        if (winner != i && scores[i] == scores[winner])
+                    // Handle ties
+                    for (int i = 0; i < MAX_PLAYERS; i++) {
+                        if (winner != i && scores[i] == scores[winner]) {
                             winner = -1;
+                        }
                     }
                     
-                    if (winner == -1) break;
-                    currentScreen = ENDING;
+                    if (winner != -1) currentScreen = ENDING;
                 }
-
-
                 break;
 
             case ENDING:
@@ -735,16 +357,18 @@ int main(void)
                 {
                     scores[i] = 0;
                     powerUses[i] = 3;
+                    powerActive[i] = false;
                     
 
                 }
-                if (IsKeyPressed(KEY_ENTER))
+                if (IsKeyPressed(KEY_ENTER)){
                     
                     currentScreen = GAMEPLAY;
+                }
                 break;
         }
 
-        // Draw
+        // --- DRAW LOGIC ---
         BeginDrawing();
         ClearBackground(BLACK);
 
@@ -756,37 +380,21 @@ int main(void)
             DrawText(title, screen.width/2 - textWidth/2, screen.height/4, 40, GRAY);
             DrawText("Press ENTER to Start", screen.width/2 - textWidth/2, screen.height/4, 20, GRAY);
         }
-        else if (currentScreen == GAMEPLAY)
-        {
-            // Draw ball
+        else if (currentScreen == GAMEPLAY) {
+            // Draw Ball
             DrawRectangleRec(ball, WHITE);
 
-            // Draw paddles
-            // for (int i = 0; i < playerCount; i++)
-            //     DrawRectangleRec(paddles[i].rect, WHITE);
-
-            if (playerOne) DrawRectangleRec(paddles[0].rect, powerActive[0] ? RED : WHITE);
-            if (playerTwo) DrawRectangleRec(paddles[1].rect, powerActive[1] ? RED : WHITE);
+            // Draw Paddles (Highlight Red if power-up active)
+            if (playerOne)   DrawRectangleRec(paddles[0].rect, powerActive[0] ? RED : WHITE);
+            if (playerTwo)   DrawRectangleRec(paddles[1].rect, powerActive[1] ? RED : WHITE);
             if (playerThree) DrawRectangleRec(paddles[2].rect, powerActive[2] ? RED : WHITE);
-            if (playerFour) DrawRectangleRec(paddles[3].rect, powerActive[3] ? RED : WHITE);
+            if (playerFour)  DrawRectangleRec(paddles[3].rect, powerActive[3] ? RED : WHITE);
 
-            // Draw scores
-            if (playerOne) DrawText(TextFormat("P1: %d", scores[0]), 20, 20, 20, GRAY);
-
-            if (playerTwo) DrawText(TextFormat("P2: %d", scores[1]), 20, 50, 20, GRAY);
-
-            if (playerThree) DrawText(TextFormat("P3: %d", scores[2]), 20, 80, 20, GRAY);
-
-            if (playerFour) DrawText(TextFormat("P4: %d", scores[3]), 20, 110, 20, GRAY);
-
-            //display powerups left:
-            if (playerOne) DrawText(TextFormat("P1 Boosts: %d", powerUses[0]), 150, 20, 20, GRAY);
-
-            if (playerTwo) DrawText(TextFormat("P2 Boosts: %d", powerUses[1]), 150, 50, 20, GRAY);
-
-            if (playerThree) DrawText(TextFormat("P3 Boosts: %d", powerUses[2]), 150, 80, 20, GRAY);
-
-            if (playerFour) DrawText(TextFormat("P4 Boosts: %d", powerUses[3]), 150, 110, 20, GRAY);
+            // Simple HUD for Player 1 (for basic testing)
+            if (playerOne) {
+                DrawText(TextFormat("P1 Score: %d", scores[0]), 20, 20, 20, GRAY);
+                DrawText(TextFormat("P1 Boosts: %d", powerUses[0]), 20, 50, 20, GRAY);
+            }
         }
         else {
             ClearBackground(BLACK);
@@ -797,6 +405,8 @@ int main(void)
         EndDrawing();
     }
 
+    // 5. Cleanup
+    uart_close(); // Correctly closes the USB file descriptor
     CloseWindow();
     return 0;
 }
