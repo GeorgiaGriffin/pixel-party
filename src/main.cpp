@@ -70,5 +70,30 @@ int main(void) {
     //             last_buttons[1], last_buttons[2], last_buttons[3], last_buttons[4]);
     //     }
     // ============ minigame =====================
-    }
+
+    //     static uint32_t last_send_time = 0;
+    //     uint32_t current_time = get_tick();
+
+    // if (current_time - last_send_time >= 50) { // Send data every 50ms
+    //     last_send_time = current_time;
+
+    //     // Read joystick and button data
+    //     for(int i = 0; i < 8; i++) {
+    //         uint16_t raw_val = joystick_data[i];
+    //         if (raw_val >= 2000 && raw_val <= 2100) g_machine->last_joystick[i] = 0;
+    //         else if (raw_val > 3000) g_machine->last_joystick[i] = 1;
+    //         else if (raw_val < 1000) g_machine->last_joystick[i] = -1;
+    //     }
+
+    //     for(int i = 0; i < 5; i++) {
+    //         g_machine->last_buttons[i] = button_state[i];
+    //     }
+
+    //     // Send data only once every 50ms
+    //     printf("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+    //         g_machine->last_joystick[0], g_machine->last_joystick[1], g_machine->last_joystick[2], g_machine->last_joystick[3], 
+    //         g_machine->last_joystick[4], g_machine->last_joystick[5], g_machine->last_joystick[6], g_machine->last_joystick[7],
+    //         g_machine->last_buttons[1], g_machine->last_buttons[2], g_machine->last_buttons[3], g_machine->last_buttons[4]);
+    // }
+}
 }
