@@ -72,6 +72,7 @@ static void applyTileAction(int player, const std::string& action) {
         //tells minigame who are the active players
         gameState.writeMini("config.json");
         //opens minigame
+        uart_send("MINIGAME\n");
         std::this_thread::sleep_for(std::chrono::milliseconds(1000*1));
         system("./pong &");
         //wait until minigame is done / has a winner
@@ -79,6 +80,7 @@ static void applyTileAction(int player, const std::string& action) {
             gameState.readMini("config.json");
             std::this_thread::sleep_for(std::chrono::milliseconds(1000*1));
         }
+        uart_send("MINIGAME_STOP\n");
         std::cout << "can tell it needs to end the game\n";
 
         //stupid long visual wait, return to board game path screen,  then close minigame
@@ -129,7 +131,7 @@ static void process_message(const std::string& msg) {
         int player = std::stoi(msg.substr(7));
         handle_turn(player);
     }
-    else if (msg == "ENDGAME\n") {
+    else if (msg == "ENDGAME") {
         handle_endgame();
     }
     else {
@@ -213,7 +215,7 @@ static void handle_registration() {
     gameState.state = 1;
     gameState.write("state.json");
 
-    uart_send("PLAYER:" + std::to_string(firstPlayer) + "\n");
+    uart_send("NEXT:" + std::to_string(firstPlayer) + "\n");
 }
 
 
@@ -222,7 +224,7 @@ static void handle_turn(int player) {
 
     // Dice detection
     // int dice_val = runDiceDetection();
-    int dice_val = 3;
+    int dice_val = 6;
 
 
     // Move player with dice 
@@ -290,7 +292,7 @@ static void handle_endgame() {
 
 
 int main() {
-    if (!uart_init("/dev/ttyUSB0", B9600)) {
+    if (!uart_init("/dev/ttyUSB1", B9600)) {
         return 1;
     }
     process_message("REGISTER\n");

@@ -22,8 +22,8 @@ init_dice_threshold: dice_init_threshold.cpp
 
 # ---------- Pong Target ----------
 
-pong: pong.cpp game_config.cpp
-	$(CXX) pong.cpp game_config.cpp -o pong $(CXXFLAGS) $(RAYLIB_LIBS)
+pong: pong.cpp game_config.cpp uart.cpp
+	$(CXX) pong.cpp game_config.cpp uart.cpp -o pong $(CXXFLAGS) $(RAYLIB_LIBS)
 
 # ---------- Combined ----------
 

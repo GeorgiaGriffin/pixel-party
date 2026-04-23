@@ -1,15 +1,15 @@
 {
-    "playerFour": 0,
+    "playerFour": 1,
     "playerFourMove": 0,
     "playerFourPowerUp": 0,
-    "playerOne": 1,
+    "playerOne": 0,
     "playerOneMove": 0,
     "playerOnePowerUp": 0,
-    "playerThree": 0,
+    "playerThree": 1,
     "playerThreeMove": 0,
     "playerThreePowerUp": 0,
-    "playerTwo": 1,
+    "playerTwo": 0,
     "playerTwoMove": 0,
     "playerTwoPowerUp": 0,
-    "winner": 2
+    "winner": 4
 }

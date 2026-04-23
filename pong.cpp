@@ -183,6 +183,40 @@ void MoveBall(void)
     ball.y += ballVelY;
 }
 
+
+void ParseUartInput(std::string line) {
+    if (line.empty()) return;
+
+    std::stringstream ss(line);
+    std::string segment;
+    std::vector<int> values;
+
+    while (std::getline(ss, segment, ',')) {
+        try {
+            values.push_back(std::stoi(segment));
+        } catch (...) { return; } 
+    }
+
+    // Index mapping for the 12-integer CSV
+    if (values.size() >= 12) {
+        // Player 1 (Top - Horizontal) uses J1x and B1
+        config.playerOneMove     = values[0]; 
+        config.playerOnePowerUp   = values[8];
+
+        // Player 2 (Left - Vertical) uses J2y and B2
+        config.playerTwoMove     = values[3]; 
+        config.playerTwoPowerUp   = values[9];
+
+        // Player 3 (Bottom - Horizontal) uses J3x and B3
+        config.playerThreeMove   = values[4]; 
+        config.playerThreePowerUp = values[10];
+
+        // Player 4 (Right - Vertical) uses J4y and B4
+        config.playerFourMove    = values[7]; 
+        config.playerFourPowerUp  = values[11];
+    }
+}
+
 // --------------------------------------------
 void MovePaddles(void) {
     int step = CALIBER / 2;
@@ -299,11 +333,12 @@ int main(void)
 
     // 2. UART Initialization (Matching your example exactly)
     // Using /dev/ttyUSB0 and 9600 baud as requested
-    if (!uart_init("/dev/ttyUSB0", 9600)) {
+    if (!uart_init("/dev/ttyUSB1", 9600)) {
         // Using standard I/O since this is a basic setup
-        std::cerr << "Failed to open UART on /dev/ttyUSB0" << std::endl;
+        std::cerr << "Failed to open UART on /dev/ttyUSB1" << std::endl;
         return 1;
     }
+    std::cout << "UART Initialized Successfully!" << std::endl;
 
     // 3. Raylib Window and Element Initialization
     InitializeElements(); // Sets up screen, paddles, and ball
@@ -324,7 +359,7 @@ int main(void)
                 MovePaddles(); // This now calls uart_receive() and ParseUartInput()
 
                 // Check for a winner (first to 11 points)
-                if ((scores[0] >= 11) || (scores[1] >= 11) || (scores[2] >= 11) || (scores[3] >= 11)) {
+                if ((scores[0] >= 5) || (scores[1] >= 5) || (scores[2] >= 5) || (scores[3] >= 5)) {
                     winner = -1;
                     for (int i = 0; i < MAX_PLAYERS; i++) {
                         // Check if the player is active
@@ -394,6 +429,18 @@ int main(void)
             if (playerOne) {
                 DrawText(TextFormat("P1 Score: %d", scores[0]), 20, 20, 20, GRAY);
                 DrawText(TextFormat("P1 Boosts: %d", powerUses[0]), 20, 50, 20, GRAY);
+            }
+            if (playerTwo) {
+                DrawText(TextFormat("P2 Score: %d", scores[0]), 20, 20, 80, GRAY);
+                DrawText(TextFormat("P2 Boosts: %d", powerUses[0]), 20, 110, 20, GRAY);
+            }
+            if (playerThree) {
+                DrawText(TextFormat("P3 Score: %d", scores[0]), 20, 20, 140, GRAY);
+                DrawText(TextFormat("P3 Boosts: %d", powerUses[0]), 20, 50, 170, GRAY);
+            }
+            if (playerFour) {
+                DrawText(TextFormat("P4 Score: %d", scores[0]), 20, 20, 200, GRAY);
+                DrawText(TextFormat("P4 Boosts: %d", powerUses[0]), 20, 50, 230, GRAY);
             }
         }
         else {
