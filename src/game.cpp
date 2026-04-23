@@ -42,16 +42,26 @@ void PlayerRegistrationState::enter(GameMachine* m) {
     m->startPressed = false;
 
     printf("REGISTER\r\n");
-    printf("[Registration] Waiting for START.\r\n");
 }
 
 void PlayerRegistrationState::advance(GameMachine* m) {
-    if (!m->startPressed) return;
-
-    m->startPressed = false;
-
-    printf("START\r\n");
-    m->setState(&m->playState);
+    if (m->startPressed) {
+        m->startPressed = false; 
+        printf("START\r\n"); // This will now print every time you click start
+    }
+    // Only transition if the Pi has sent a command to begin the game
+    // We check the UART buffer while still in the Registration State
+    if (USART6->SR & USART_SR_RXNE) {
+        char buf[32];
+        int n;
+        USART6_ReadLine(buf, sizeof(buf));
+        
+        if (parseNext(buf, &n) && n != -1) {
+            m->currentPlayer = n;
+            printf("PLAYER:%d\r\n", n); // Sync with Pi
+            m->setState(&m->playState); // NOW move to gameplay
+        }
+    }
 }
 
 void GameplayState::enter(GameMachine* m) {
@@ -78,6 +88,7 @@ void GameplayState::advance(GameMachine* m) {
         }
     } else {
         // This catches "false_start" or other messages from Pi
+        m->currentPlayer = n;
         printf("[Gameplay] Ignoring: %s\r\n", buf);
     }
     
@@ -88,5 +99,5 @@ void EndGameState::enter(GameMachine* m) {
     // Actual:
     //  Send over UART: "ENDGAME"
     //   hardware interrupt calls m->reset()
-    printf("[EndGame] Game over.\r\n");
+    printf("ENDGAME\r\n");
 }

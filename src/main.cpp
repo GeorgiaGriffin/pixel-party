@@ -4,6 +4,8 @@
 
 extern "C" void __libc_init_array(void);  // C++ global constructors
 
+GameMachine game;
+
 int main(void) {
     __libc_init_array();  // run C++ constructors before anything else
 
@@ -15,7 +17,6 @@ int main(void) {
     // delay so serial monitor connects
     for (volatile int i = 0; i < 4000000; i++);
 
-    GameMachine game;
     g_machine = &game;
     game.setState(&game.regState);
 

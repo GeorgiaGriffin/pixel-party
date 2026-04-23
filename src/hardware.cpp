@@ -207,23 +207,18 @@ extern "C" { // needed to use cpp with platform io
     void EXTI15_10_IRQHandler(void) {
         if (EXTI->PR & (1 << BUTTON1_PIN)) {
             EXTI->PR |= (1 << BUTTON1_PIN);
-            printf("BUTTON1 pressed (PB10)\r\n");
         }
         if (EXTI->PR & (1 << BUTTON2_PIN)) {
             EXTI->PR |= (1 << BUTTON2_PIN);
-            printf("BUTTON2 pressed (PB12)\r\n");
         }
         if (EXTI->PR & (1 << BUTTON3_PIN)) {
             EXTI->PR |= (1 << BUTTON3_PIN);
-            printf("BUTTON3 pressed (PB13)\r\n");
         }
         if (EXTI->PR & (1 << BUTTON4_PIN)) {
             EXTI->PR |= (1 << BUTTON4_PIN);
-            printf("BUTTON4 pressed (PB14)\r\n");
         }
         if (EXTI->PR & (1 << START_BUTTON_PIN)) {
             EXTI->PR |= (1 << START_BUTTON_PIN);
-            printf("START BUTTON pressed (PB15)\r\n");
             if (g_machine) g_machine->startPressed = true;
         }
     }
