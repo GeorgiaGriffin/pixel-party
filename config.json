@@ -5,11 +5,11 @@
     "playerOne": 1,
     "playerOneMove": 0,
     "playerOnePowerUp": 0,
-    "playerThree": 1,
+    "playerThree": 0,
     "playerThreeMove": 0,
     "playerThreePowerUp": 0,
-    "playerTwo": 0,
+    "playerTwo": 1,
     "playerTwoMove": 0,
     "playerTwoPowerUp": 0,
-    "winner": 1
+    "winner": 2
 }

@@ -146,7 +146,10 @@ static void handle_registration() {
 
     // call the graphics_release to start registration
     system("pkill -f graphics_release");
-    system("./graphics_release &");
+    // system("./graphics_release &");
+    int result = system("cd /home/georgia/pixel-party && nohup ./graphics_release > godot.log 2>&1 &");
+    std::cout << "Godot launch command returned: " << result << std::endl; 
+ 
 
     // every time a player removes token, write to json
     int activeCount = 0;
@@ -290,6 +293,7 @@ static void handle_endgame() {
 
 int main() {
     uart_init("/dev/serial0");
+    process_message("REGISTER\n");
     game_loop();
     return 0;
 }
