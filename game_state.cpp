@@ -12,6 +12,7 @@ static void process_message(const std::string& msg);
 static void handle_registration();
 static void handle_turn(int player);
 static void handle_endgame();
+static void handle_token_message(const std::string& msg);
 
 static State gameState;
 
@@ -30,6 +31,18 @@ static const std::vector<std::string> TILE_ACTIONS = {
     "none"         // tile 11 (end)
 };
 
+static void handle_token_message(const std::string& msg) {
+    int token, value;
+    // parse TOKEN[player]:[0 or 1]
+    size_t colon = msg.find(':');
+    token = std::stoi(msg.substr(5, colon - 5));
+    value = std::stoi(msg.substr(colon + 1));
+    // update JSON
+    gameState.read("state.json");
+    gameState.players[token - 1].out = !value;
+    gameState.write("state.json");
+}
+
 static void applyTileAction(int player, const std::string& action) {
     if (action == "none") {
         return;
@@ -45,6 +58,10 @@ static void applyTileAction(int player, const std::string& action) {
         while(gameState.players[0].out == 1 || gameState.players[1].out == 1 || gameState.players[2].out == 1 || gameState.players[3].out == 1) {
             gameState.read("state.json");
             std::this_thread::sleep_for(std::chrono::milliseconds(100*1));
+            std::string input = uart_receive();
+            if (input.find("TOKEN") == 0) {
+                handle_token_message(input);
+            }
         }
 
 
@@ -104,6 +121,7 @@ void game_loop() {
 
 
 static void process_message(const std::string& msg) {
+    std::cout << "Processing message: " << msg << "\n";
     if (msg == "REGISTER\n") {
         handle_registration();
     }
@@ -115,7 +133,7 @@ static void process_message(const std::string& msg) {
         handle_endgame();
     }
     else {
-        uart_send("ERROR\n");
+        std::cout << "Unknown message: " << msg << "\n";
     }
 }
 
@@ -127,7 +145,7 @@ static void handle_registration() {
     gameState.write("state.json");
 
     // call the graphics_release to start registration
-    system("pkill -x graphics_release");
+    system("pkill -f graphics_release");
     system("./graphics_release &");
 
     // every time a player removes token, write to json
@@ -135,12 +153,14 @@ static void handle_registration() {
      
     while (true) {
         // testing without button:
-        std::string input;
+        
         while (true) {
-            std::cout << "Start game? Type 'start': ";
-            std::getline(std::cin, input);
-            if (input == "start") {
+            std::string input = uart_receive();
+            if (input == "START\n") {
                 break;
+            }
+            else if (input.find("TOKEN") == 0) {
+                handle_token_message(input);
             }
         }
 
