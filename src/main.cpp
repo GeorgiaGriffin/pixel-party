@@ -61,6 +61,8 @@ int main(void)
     MX_GPIO_Init();
     MX_USART2_UART_Init();
     #endif
+
+    MX_USB_DEVICE_Init();
    
 
     #ifdef PCB
@@ -70,6 +72,7 @@ int main(void)
 
     // 3. Custom / Lower-Level Peripheral Initialization
     GPIO_Init();
+    dma_setup();
     ADC_Init();
     EXTI_Init();
 
@@ -78,8 +81,8 @@ int main(void)
 
     // 5. Initialize Game Engine
     HAL_Delay(2000); // give it 3 secs to open serial monitor 
-    g_machine = &game;
-    game.setState(&game.regState);
+    // g_machine = &game;
+    // game.setState(&game.regState);
 
     // Variable for non-blocking USB delay
     uint32_t last_usb_send = HAL_GetTick();
@@ -87,32 +90,34 @@ int main(void)
     /* Infinite loop */
     while (1)
     {
-        // Advance the game state machine
-        handleTokenEvents(&game);
-        // Only advance the game if the button was actually pressed for more than a few ms
-        if (game.startPressed) {
-            HAL_Delay(50); // Simple debounce
-            // Check if the pin is still low (active low)
-            if ((GPIOB->IDR & (1 << START_BUTTON_PIN)) == 0) {
-                game.advance();
-            } else {
-                game.startPressed = false; // It was just noise
-            }
-        } else {
-            game.advance();
-        }
+        // // Advance the game state machine
+        // handleTokenEvents(&game);
+        // // Only advance the game if the button was actually pressed for more than a few ms
+        // if (game.startPressed) {
+        //     HAL_Delay(50); // Simple debounce
+        //     // Check if the pin is still low (active low)
+        //     if ((GPIOB->IDR & (1 << START_BUTTON_PIN)) == 0) {
+        //         game.advance();
+        //     } else {
+        //         game.startPressed = false; // It was just noise
+        //     }
+        // } else {
+        //     game.advance();
+        // }
         // Add a tiny delay to prevent the loop from "tight-polling" the UART 
         // which can sometimes starve the hardware of processing time
-        HAL_Delay(10);
+        HAL_Delay(100);
+
+       // printf("X: %d  Y: %d\r\n",  (uint8_t)(joystick_data[0]),   (uint8_t)(joystick_data[1]));
 
         // Non-blocking timer: Only send USB data every 10ms
         // if ((HAL_GetTick() - last_usb_send) >= 10) 
         // {
-        //     uint8_t report_buffer[2];
-        //     report_buffer[0] = (uint8_t)(joystick_data[0] >> 4);
-        //     report_buffer[1] = (uint8_t)(joystick_data[1] >> 4);
+            uint8_t report_buffer[2];
+            report_buffer[0] = (uint8_t)(joystick_data[0] >> 4);
+            report_buffer[1] = (uint8_t)(joystick_data[1] >> 4);
 
-        //     USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, report_buffer, 2);
+            USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, report_buffer, 2);
             
         //     // Optional: Printf for debugging (might slow down the loop slightly)
         //     printf("X: %d  Y: %d\r\n", report_buffer[0], report_buffer[1]);
@@ -186,43 +191,46 @@ extern "C" {
 
 #endif
 
-void SystemClock_Config(void)
-{
-    // USE 48MHZ WITH 9600 BAUD
+    void SystemClock_Config(void)
+    {
     RCC_OscInitTypeDef RCC_OscInitStruct = {0};
     RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
+    /** Configure the main internal regulator output voltage
+     */
     __HAL_RCC_PWR_CLK_ENABLE();
     __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
+    /** Initializes the RCC Oscillators according to the specified parameters
+     * in the RCC_OscInitTypeDef structure.
+     */
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-    RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS; 
+    RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
     RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-    
-    // PLL Math for 48MHz: (8MHz / 4) * 48 / 2 = 48MHz
-    RCC_OscInitStruct.PLL.PLLM = 4;  // 8MHz / 4 = 2MHz
-    RCC_OscInitStruct.PLL.PLLN = 48; // 2MHz * 48 = 96MHz (VCO)
-    RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2; // 96MHz / 2 = 48MHz (SYSCLK)
-    RCC_OscInitStruct.PLL.PLLQ = 2;  // 96MHz / 2 = 48MHz (USB clock)
-
+    RCC_OscInitStruct.PLL.PLLM = 4;
+    RCC_OscInitStruct.PLL.PLLN = 72;
+    RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+    RCC_OscInitStruct.PLL.PLLQ = 3;
     if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
     {
         Error_Handler();
     }
 
+    /** Initializes the CPU, AHB and APB buses clocks
+     */
     RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                                 |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
     RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
     RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2; // APB1 = 24MHz
-    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1; // APB2 = 48MHz
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
     {
         Error_Handler();
     }
-}
+    }
 
 void Error_Handler(void) {
     __disable_irq();

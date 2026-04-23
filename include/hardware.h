@@ -37,17 +37,23 @@
 #define LED_1_PIN   2
 #define LED_2_PIN   3
 
+extern volatile uint16_t joystick_data[2];
+
 // Init
 void GPIO_Init(void);
 
+//ADC
 void ADC_Init(void);
+
+
+//DMA
+void dma_setup(void);
 void EXTI_Init(void);
 
 // Helpers
 void delay(volatile uint32_t count);
 void LED_Set(uint8_t pin, uint8_t state);
-void Joy_Read(uint8_t x_channel, uint8_t y_channel, uint16_t *x, uint16_t *y);
-uint16_t ADC_Read(uint8_t channel);
+
 
 // UART 
 void USART6_Init(void);
@@ -57,3 +63,4 @@ void USART6_SendChar(char c);
 
 void USART1_Init(void);      // Add this line
 void USART1_SendChar(char c);
+

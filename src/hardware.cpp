@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+volatile uint16_t joystick_data[2] = {0};
+
 void delay(volatile uint32_t count) {
     HAL_Delay(count); 
 }
@@ -24,7 +26,7 @@ void USART6_Init(void) {
     GPIOC->AFR[0] |=  ((8   << (6 * 4)) | (8   << (7 * 4)));
 
     
-    USART6->BRR = 0x1388; //0x271; // for 115200 at 72 MHz
+    USART6->BRR = 0x1D4C; //0x271; // for 115200 at 72 MHz
     // old: 0x683; for 9600 baud @ 16MHz
     USART6->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;
 }
@@ -103,8 +105,8 @@ void GPIO_Init(void) {
 
     // Joystick analog pins on GPIOA
     GPIOA->MODER |= (3 << (JOY1_X_PIN * 2)) | (3 << (JOY1_Y_PIN * 2));
-    GPIOA->MODER |= (3 << (JOY2_X_PIN * 2)) | (3 << (JOY2_Y_PIN * 2));
-    GPIOA->MODER |= (3 << (JOY3_X_PIN * 2)) | (3 << (JOY3_Y_PIN * 2));
+   /* GPIOA->MODER |= (3 << (JOY2_X_PIN * 2)) | (3 << (JOY2_Y_PIN * 2));
+    GPIOA->MODER |= (3 << (JOY3_X_PIN * 2)) | (3 << (JOY3_Y_PIN * 2));*/
 
     // Joystick 4 analog pins on GPIOB
     GPIOB->MODER |= (3 << (JOY4_X_PIN * 2)) | (3 << (JOY4_Y_PIN * 2));
@@ -164,28 +166,76 @@ void EXTI_Init(void) {
 // ---- ADC init ----
 
 void ADC_Init(void) {
+    // 1. Enable ADC Clock
     RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
 
-    ADC1->CR1 = 0;
+    ADC1->CR1 = ADC_CR1_SCAN; // Scan mode for multiple channels
     ADC1->CR2 = 0;
+
+    // 2. Set sample times to maximum 
     ADC1->SMPR2 |= (7 << (JOY1_X_ADC * 3)) | (7 << (JOY1_Y_ADC * 3));
-    ADC1->SMPR2 |= (7 << (JOY2_X_ADC * 3)) | (7 << (JOY2_Y_ADC * 3));
+   /* ADC1->SMPR2 |= (7 << (JOY2_X_ADC * 3)) | (7 << (JOY2_Y_ADC * 3));
     ADC1->SMPR2 |= (7 << (JOY3_X_ADC * 3)) | (7 << (JOY3_Y_ADC * 3));
-    ADC1->SMPR2 |= (7 << (JOY4_X_ADC * 3)) | (7 << (JOY4_Y_ADC * 3));
+    ADC1->SMPR2 |= (7 << (JOY4_X_ADC * 3)) | (7 << (JOY4_Y_ADC * 3));*/
 
-    ADC1->CR2 |= ADC_CR2_ADON;
-}
+    // 3. Sequence Length: 8 Conversions
+    ADC1->SQR1 &= ~ADC_SQR1_L; 
+    ADC1->SQR1 |= (1 << 20); 
 
-uint16_t ADC_Read(uint8_t channel) {
-    ADC1->SQR3 = channel;
+    // 4. Channel Order
+    // SQR3 handles conversions 1 through 6
+    ADC1->SQR3 = (JOY1_X_ADC << 0)  | 
+                 (JOY1_Y_ADC << 5); 
+    /*             (JOY2_X_ADC << 10) | 
+                 (JOY2_Y_ADC << 15) | 
+                 (JOY3_X_ADC << 20) | 
+                 (JOY3_Y_ADC << 25);*/
+                 
+    // SQR2 handles conversions 7 and 8
+   /* ADC1->SQR2 = (JOY4_X_ADC << 0)  | 
+                 (JOY4_Y_ADC << 5);*/
+
+    // 5. DMA & Continuous Settings 
+    ADC1->CR2 |= ADC_CR2_DMA | ADC_CR2_DDS | ADC_CR2_CONT | ADC_CR2_ADON;
+
+    // Wait a tiny bit for ADC to stabilize
+    for(volatile int i=0; i<1000; i++); 
+
+    // 6. Start Conversion
     ADC1->CR2 |= ADC_CR2_SWSTART;
-    while (!(ADC1->SR & ADC_SR_EOC));
-    return ADC1->DR;
 }
 
-void Joy_Read(uint8_t x_channel, uint8_t y_channel, uint16_t *x, uint16_t *y) {
-    *x = ADC_Read(x_channel);
-    *y = ADC_Read(y_channel);
+// ----DMA init--------
+
+
+void dma_setup(void) {
+    // 1. Enable DMA2 Clock (ADC1 is connected to DMA2)
+    RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
+
+    // 2. Configure DMA2 Stream 0 (ADC1 is on Channel 0)
+    DMA2_Stream0->CR &= ~DMA_SxCR_EN; // Turn off before config
+    while(DMA2_Stream0->CR & DMA_SxCR_EN); 
+
+    // Set Peripheral Address (Source): The ADC Data Register
+    DMA2_Stream0->PAR = (uint32_t)&(ADC1->DR);
+
+    // Set Memory Address (Destination): Our C array
+    DMA2_Stream0->M0AR = (uint32_t)joystick_data;
+
+    // Total items to transfer: 8 (4 Joysticks, X and Y)
+    DMA2_Stream0->NDTR = 2;
+
+    // Configure Control Register (CR)
+    DMA2_Stream0->CR = (0 << 25) |        // Channel 0
+                       (0b01 << 16) |     // Priority Medium
+                       (0b01 << 13) |     // Memory Size 16-bit
+                       (0b01 << 11) |     // Peripheral Size 16-bit
+                       DMA_SxCR_MINC |    // Memory Increment
+                       DMA_SxCR_CIRC |    // Circular Mode
+                       DMA_SxCR_TCIE;     // Enable Interrupt (optional)
+
+    // 3. Enable the DMA Stream
+    DMA2_Stream0->CR |= DMA_SxCR_EN;
 }
 
 // ---- LED helpers ----
