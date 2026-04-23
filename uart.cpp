@@ -2,62 +2,83 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <iostream>
+#include <string>
+#include <termios.h>
+
 
 static int uart_fd;  // shared internally
 
-bool uart_init(const std::string& device) {
-    // initialize uart stuff 
+bool uart_init(const std::string& device, int baud) {
+    // initialize uart stuff
+    uart_fd = open(device.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
+    if (uart_fd < 0) {
+        perror("open");
+        return false;
+    }
 
-    // this is from chat:
-    // uart_fd = open(device.c_str(), O_RDWR | O_NOCTTY);
-    // configure termios here
-    // return uart_fd >= 0;
 
-    // testing
-    std::cout << "Commands to be received from the MCU:\n";
-    std::cout << "  REGISTER\n";
-    std::cout << "  PLAYER:int\n";
-    std::cout << "  ENDGAME\n\n";
+    fcntl(uart_fd, F_SETFL, 0); // blocking mode
+
+
+    struct termios options;
+    tcgetattr(uart_fd, &options);
+
+    cfmakeraw(&options);
+
+    cfsetispeed(&options, baud);
+    cfsetospeed(&options, baud);
+
+    options.c_cflag |= (CLOCAL | CREAD);
+    options.c_cflag &= ~PARENB;
+    options.c_cflag &= ~CSTOPB;
+    options.c_cflag &= ~CSIZE;
+    options.c_cflag |= CS8;
+
+    options.c_cc[VMIN] = 1;
+    options.c_cc[VTIME] = 1;
+
+    tcsetattr(uart_fd, TCSANOW, &options);
+
     return true;
 }
 
+
 std::string uart_receive() {
-    // from chat:
-    // char buffer[128];
-    // int n = read(uart_fd, buffer, sizeof(buffer));
-    // if (n > 0) {
-    //     return std::string(buffer, n);
-    // }
-    // return "";
+    static std::string buffer;
+    char c;
 
-    // testing:
-    fd_set set;
-    struct timeval timeout;
+    while (read(uart_fd, &c, 1) > 0) {
+        if (c == '\n') {
+            std::string line = buffer;
+            buffer.clear();
 
-    FD_ZERO(&set);
-    FD_SET(STDIN_FILENO, &set);
+            if (!line.empty() && line.back() == '\r') {
+                line.pop_back();
+            }
 
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 100000; // 100ms
+            // 👇 PUT PRINT HERE (ONLY ON COMPLETE MESSAGE)
+            std::cout << "RECEIVING: " << line << std::endl;
 
-    int rv = select(STDIN_FILENO + 1, &set, NULL, NULL, &timeout);
-
-    if (rv > 0) {
-        std::string input;
-        std::getline(std::cin, input);
-        if (!input.empty()) {
-            return input + "\n";
+            return line;
+        } else {
+            buffer += c;
         }
     }
 
     return "";
-
 }
 
-void uart_send(const std::string& msg) {
-    // from chat:
-    //write(uart_fd, msg.c_str(), msg.size());
 
-    // testing:
-    std::cout << "UART send: " << msg.c_str() << "\n";
+void uart_send(const std::string& msg) {
+    if (msg.empty()) return;
+
+    std::string out = msg;
+    if (out.back() != '\n') {
+        out += '\n';
+    }
+    write(uart_fd, out.c_str(), out.size());
+}
+
+void uart_close() {
+    close(uart_fd);
 }

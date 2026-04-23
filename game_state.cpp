@@ -154,12 +154,10 @@ static void handle_registration() {
     // every time a player removes token, write to json
     int activeCount = 0;
      
-    while (true) {
-        // testing without button:
-        
+    while (true) {      
         while (true) {
             std::string input = uart_receive();
-            if (input == "START\n") {
+            if (input == "START") {
                 break;
             }
             else if (input.find("TOKEN") == 0) {
@@ -292,8 +290,11 @@ static void handle_endgame() {
 
 
 int main() {
-    uart_init("/dev/serial0");
+    if (!uart_init("/dev/ttyUSB0", B9600)) {
+        return 1;
+    }
     process_message("REGISTER\n");
     game_loop();
+    uart_close();
     return 0;
 }
