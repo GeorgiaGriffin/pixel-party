@@ -16,6 +16,12 @@ public:
 };
 
 // ========= States =========
+class MinigameState : public GameState {
+public:
+    void enter(GameMachine* m) override;
+    void advance(GameMachine* m) override;
+};
+
 class PlayerRegistrationState : public GameState {
 public:
     void enter(GameMachine* m) override;
@@ -49,7 +55,11 @@ public:
     volatile uint8_t tokenEvent = 0;
     volatile uint8_t tokenState[4] = {0};
 
+    int8_t last_joystick[8] = {0};
+    uint8_t last_buttons[5] = {0};
+
     // States are public so state classes and main can reference them
+    MinigameState miniState;
     PlayerRegistrationState regState;
     GameplayState           playState;
     EndGameState            endState;

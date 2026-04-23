@@ -4,6 +4,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+volatile uint16_t joystick_data[8] = {0};
+volatile uint16_t button_state[5] = {0};
+volatile uint32_t sys_ticks = 0;
+
+uint32_t last_token_time[4]  = {0};
+uint32_t last_button_time[5] = {0};
+
+extern "C" {
+    void SysTick_Handler(void) {
+        sys_ticks++;
+    }
+}
+
+uint32_t get_tick(void) {
+    return sys_ticks;
+}
+
+
 void delay(volatile uint32_t count) {
     while(count--) {
         __asm__("nop");
@@ -106,6 +124,10 @@ void EXTI_Init(void) {
     // Falling edge trigger for all (active low with pull-up)
     EXTI->FTSR |= (1 << START_BUTTON_PIN) | (1 << BUTTON1_PIN) | (1 << BUTTON2_PIN) |
                   (1 << BUTTON3_PIN)      | (1 << BUTTON4_PIN);
+
+    EXTI->RTSR |= (1 << START_BUTTON_PIN) | (1 << BUTTON1_PIN) | (1 << BUTTON2_PIN) |
+                  (1 << BUTTON3_PIN)      | (1 << BUTTON4_PIN);
+
     
     // Both edges for token sensors (placed and removed)
     EXTI->FTSR |= (1 << TOKEN1_PIN) | (1 << TOKEN2_PIN) |
@@ -131,29 +153,76 @@ void EXTI_Init(void) {
 // ---- ADC init ----
 
 void ADC_Init(void) {
+    // 1. Enable ADC Clock
     RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
 
-    ADC1->CR1 = 0;
+    ADC1->CR1 = ADC_CR1_SCAN; // Scan mode for multiple channels
     ADC1->CR2 = 0;
+
+    // 2. Set sample times to maximum 
     ADC1->SMPR2 |= (7 << (JOY1_X_ADC * 3)) | (7 << (JOY1_Y_ADC * 3));
     ADC1->SMPR2 |= (7 << (JOY2_X_ADC * 3)) | (7 << (JOY2_Y_ADC * 3));
     ADC1->SMPR2 |= (7 << (JOY3_X_ADC * 3)) | (7 << (JOY3_Y_ADC * 3));
     ADC1->SMPR2 |= (7 << (JOY4_X_ADC * 3)) | (7 << (JOY4_Y_ADC * 3));
 
-    ADC1->CR2 |= ADC_CR2_ADON;
-}
+    // 3. Sequence Length: 8 Conversions
+    ADC1->SQR1 &= ~ADC_SQR1_L; 
+    ADC1->SQR1 |= (7 << 20); 
 
-uint16_t ADC_Read(uint8_t channel) {
-    ADC1->SQR3 = channel;
+    // 4. Channel Order
+    // SQR3 handles conversions 1 through 6
+    ADC1->SQR3 = (JOY1_X_ADC << 0)  | 
+                 (JOY1_Y_ADC << 5) |
+                 (JOY2_X_ADC << 10) | 
+                 (JOY2_Y_ADC << 15) | 
+                 (JOY3_X_ADC << 20) | 
+                 (JOY3_Y_ADC << 25);
+                 
+    // SQR2 handles conversions 7 and 8
+   ADC1->SQR2 = (JOY4_X_ADC << 0)  | 
+                 (JOY4_Y_ADC << 5);
+
+    // 5. DMA & Continuous Settings 
+    ADC1->CR2 |= ADC_CR2_DMA | ADC_CR2_DDS | ADC_CR2_CONT | ADC_CR2_ADON;
+
+    // Wait a tiny bit for ADC to stabilize
+    for(volatile int i=0; i<1000; i++); 
+
+    // 6. Start Conversion
     ADC1->CR2 |= ADC_CR2_SWSTART;
-    while (!(ADC1->SR & ADC_SR_EOC));
-    return ADC1->DR;
 }
 
-void Joy_Read(uint8_t x_channel, uint8_t y_channel, uint16_t *x, uint16_t *y) {
-    *x = ADC_Read(x_channel);
-    *y = ADC_Read(y_channel);
+// ----DMA init--------
+
+
+void dma_setup(void) {
+    // 1. Enable DMA2 Clock (ADC1 is connected to DMA2)
+    RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
+
+    // 2. Configure DMA2 Stream 0 (ADC1 is on Channel 0)
+    DMA2_Stream0->CR &= ~DMA_SxCR_EN; // Turn off before config
+    while(DMA2_Stream0->CR & DMA_SxCR_EN); 
+
+    // Set Peripheral Address (Source): The ADC Data Register
+    DMA2_Stream0->PAR = (uint32_t)&(ADC1->DR);
+
+    // Set Memory Address (Destination): Our C array
+    DMA2_Stream0->M0AR = (uint32_t)joystick_data;
+
+    // Total items to transfer: 8 (4 Joysticks, X and Y)
+    DMA2_Stream0->NDTR = 8;
+
+    // Configure Control Register (CR)
+    DMA2_Stream0->CR = (0 << 25) |        // Channel 0
+                       (0b01 << 16) |     // Priority Medium
+                       (0b01 << 13) |     // Memory Size 16-bit
+                       (0b01 << 11) |     // Peripheral Size 16-bit
+                       DMA_SxCR_MINC |    // Memory Increment
+                       DMA_SxCR_CIRC;
+    // 3. Enable the DMA Stream
+    DMA2_Stream0->CR |= DMA_SxCR_EN;
 }
+
 
 // ---- LED helpers ----
 
@@ -205,21 +274,44 @@ extern "C" { // needed to use cpp with platform io
     // Handles EXTI10-15: BUTTON1 (PB10), BUTTON2 (PB12), BUTTON3 (PB13),
     //                    BUTTON4 (PB14), START_BUTTON (PB15)
     void EXTI15_10_IRQHandler(void) {
-        if (EXTI->PR & (1 << BUTTON1_PIN)) {
-            EXTI->PR |= (1 << BUTTON1_PIN);
-        }
-        if (EXTI->PR & (1 << BUTTON2_PIN)) {
-            EXTI->PR |= (1 << BUTTON2_PIN);
-        }
-        if (EXTI->PR & (1 << BUTTON3_PIN)) {
-            EXTI->PR |= (1 << BUTTON3_PIN);
-        }
-        if (EXTI->PR & (1 << BUTTON4_PIN)) {
-            EXTI->PR |= (1 << BUTTON4_PIN);
-        }
+        uint32_t current_time = get_tick();
+
         if (EXTI->PR & (1 << START_BUTTON_PIN)) {
             EXTI->PR |= (1 << START_BUTTON_PIN);
             if (g_machine) g_machine->startPressed = true;
+            
+            if (current_time - last_button_time[0] > 50) {
+                button_state[0] = (GPIOB->IDR & (1 << START_BUTTON_PIN)) ? 0 : 1;
+                last_button_time[0] = current_time;
+            }
+        }
+        if (EXTI->PR & (1 << BUTTON1_PIN)) {
+            EXTI->PR |= (1 << BUTTON1_PIN);
+            if (current_time - last_button_time[1] > 50) {
+                button_state[1] = (GPIOB->IDR & (1 << BUTTON1_PIN)) ? 0 : 1;
+                last_button_time[1] = current_time;
+            }
+        }
+        if (EXTI->PR & (1 << BUTTON2_PIN)) {
+            EXTI->PR |= (1 << BUTTON2_PIN);
+            if (current_time - last_button_time[2] > 50) {
+                button_state[2] = (GPIOB->IDR & (1 << BUTTON2_PIN)) ? 0 : 1;
+                last_button_time[2] = current_time;
+            }
+        }
+        if (EXTI->PR & (1 << BUTTON3_PIN)) {
+            EXTI->PR |= (1 << BUTTON3_PIN);
+            if (current_time - last_button_time[3] > 50) {
+                button_state[3] = (GPIOB->IDR & (1 << BUTTON3_PIN)) ? 0 : 1;
+                last_button_time[3] = current_time;
+            }
+        }
+        if (EXTI->PR & (1 << BUTTON4_PIN)) {
+            EXTI->PR |= (1 << BUTTON4_PIN);
+            if (current_time - last_button_time[4] > 50) {
+                button_state[4] = (GPIOB->IDR & (1 << BUTTON4_PIN)) ? 0 : 1;
+                last_button_time[4] = current_time;
+            }
         }
     }
 }

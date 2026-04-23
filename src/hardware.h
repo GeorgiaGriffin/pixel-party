@@ -36,11 +36,16 @@
 #define LED_1_PIN   2
 #define LED_2_PIN   3
 
+extern volatile uint16_t joystick_data[8];
+extern volatile uint16_t button_state[5];
+
 // Init
 void GPIO_Init(void);
 void USART6_Init(void);
 void ADC_Init(void);
+void dma_setup();
 void EXTI_Init(void);
+uint32_t get_tick(void);
 
 // Helpers
 void delay(volatile uint32_t count);
