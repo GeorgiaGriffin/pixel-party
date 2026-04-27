@@ -7,7 +7,15 @@
 #include <chrono>
 #include <vector>
 #include <string>
+#include <csignal>
+#include <atomic>
 
+std::atomic<bool> running(true);
+
+void signal_handler(int signum) {
+    std::cout << "Shutdown signal received\n";
+    running = false;
+}
 static void process_message(const std::string& msg);
 static void handle_registration();
 static void handle_turn(int player);
@@ -32,6 +40,7 @@ static const std::vector<std::string> TILE_ACTIONS = {
 };
 
 static void handle_token_message(const std::string& msg) {
+    std::cout<<"handle token message\n";
     int token, value;
     // parse TOKEN[player]:[0 or 1]
     size_t colon = msg.find(':');
@@ -44,6 +53,7 @@ static void handle_token_message(const std::string& msg) {
 }
 
 static void applyTileAction(int player, const std::string& action) {
+    std::cout << "apply tile action\n";
     if (action == "none") {
         return;
     }
@@ -113,12 +123,16 @@ static void applyTileAction(int player, const std::string& action) {
 }
 
 void game_loop() {
-    while (true) {
+    while (running) {
         std::string msg = uart_receive();
         if (!msg.empty()) {
             process_message(msg);
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(5)); // prevent CPU spin
     }
+    std::cout << "Cleaning up UART...\n";
+    uart_close();
+    
 }
 
 
@@ -156,8 +170,8 @@ static void handle_registration() {
     // every time a player removes token, write to json
     int activeCount = 0;
      
-    while (true) {      
-        while (true) {
+    while (running) {      
+        while (running) {
             std::string input = uart_receive();
             if (input == "START") {
                 break;
@@ -223,8 +237,8 @@ static void handle_turn(int player) {
     std::cout << "Player Turn for player " << player << "\n";
 
     // Dice detection
-    int dice_val = runDiceDetection();
-    // int dice_val = 3;
+    // int dice_val = runDiceDetection();
+    int dice_val = 6;
 
 
     // Move player with dice 
@@ -294,9 +308,12 @@ static void handle_endgame() {
 int main() {
     // if (!uart_init("/dev/SERIAL/BY-ID/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0", B9600)) {
     // system("pkill -o -f ./game");
-    if (!uart_init("/dev/ttyUSB0", B9600)) {
+    signal(SIGTERM, signal_handler);
+    signal(SIGINT, signal_handler);
+    if (!uart_init("/dev/ttyUSB1", 9600)) {
         return 1;
     }
+    // tcflush(uart_fd, TCIFLUSH);
     process_message("REGISTER\n");
     game_loop();
     uart_close();
