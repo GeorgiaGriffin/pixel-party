@@ -15,37 +15,3 @@ ERROR: Node not found: "MoveBackwardTile" (relative to "/root/Location").
    at: get_node (scene/main/node.cpp:1907)
    GDScript backtrace (most recent call first):
        [0] _ready (res://scripts/location.gd:120)
-here
-11
-1
-1 -> MoveBackwardTile:<CharacterBody2D#182536111677>
-getting here
-2
-2 -> NormalTile3:<CharacterBody2D#182670329356>
-getting here
-3
-3 -> MinigameTile2:<CharacterBody2D#182502557253>
-getting here
-4
-4 -> NormalTile4:<CharacterBody2D#182703883776>
-getting here
-5
-5 -> LoosePointsTile:<CharacterBody2D#182435448402>
-getting here
-6
-6 -> NormalTile2:<CharacterBody2D#182636774936>
-getting here
-7
-7 -> MinigameTile:<CharacterBody2D#182469002831>
-getting here
-8
-8 -> MoveForwardTile:<CharacterBody2D#182569666097>
-getting here
-9
-9 -> NormalTile:<CharacterBody2D#182603220517>
-getting here
-10
-10 -> GainPointsTile:<CharacterBody2D#182401893972>
-getting here
-WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
-     at: cleanup (core/object/object.cpp:2514)

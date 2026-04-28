@@ -292,7 +292,7 @@ static void handle_endgame() {
 
 
 int main() {
-    if (!uart_init("/dev/ttyUSB1", B9600)) {
+    if (!uart_init("/dev/ttyUSB0", B9600)) {
         return 1;
     }
     process_message("REGISTER\n");

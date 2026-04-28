@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <termios.h>
+#include <sys/ioctl.h>
 
 
 static int uart_fd;  // shared internally
@@ -17,6 +18,10 @@ bool uart_init(const std::string& device, int baud) {
     }
 
     // fcntl(uart_fd, F_SETFL, 0); // blocking mode
+
+    // Prevent FTDI from toggling DTR/RTS on open (stops garbage bytes to MCU)
+    int flags = TIOCM_DTR | TIOCM_RTS;
+    ioctl(uart_fd, TIOCMBIC, &flags);
 
     struct termios options;
     tcgetattr(uart_fd, &options);
@@ -36,6 +41,8 @@ bool uart_init(const std::string& device, int baud) {
     options.c_cc[VTIME] = 1;
 
     tcsetattr(uart_fd, TCSANOW, &options);
+    // Clear the output buffer before anything gets sent
+    tcflush(uart_fd, TCIOFLUSH);  // flush both input AND output
 
     return true;
 }
