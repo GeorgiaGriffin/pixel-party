@@ -7,6 +7,14 @@
 #include <chrono>
 #include <vector>
 #include <string>
+#include <csignal>
+#include <atomic>
+
+std::atomic<bool> running(true);
+
+void signal_handler(int signum) {
+    running = false;
+}
 
 static void process_message(const std::string& msg);
 static void handle_registration();
@@ -80,7 +88,10 @@ static void applyTileAction(int player, const std::string& action) {
             gameState.readMini("config.json");
             std::this_thread::sleep_for(std::chrono::milliseconds(1000*1));
         }
-        uart_send("MINIGAME_STOP\n");
+        // while (uart_receive() != "MINI_ENDED") {
+        uart_send("MINIGAME_STOP\n"); //Harini
+        // }
+        
         std::cout << "can tell it needs to end the game\n";
 
         //stupid long visual wait, return to board game path screen,  then close minigame
@@ -113,7 +124,7 @@ static void applyTileAction(int player, const std::string& action) {
 }
 
 void game_loop() {
-    while (true) {
+    while (running) {
         std::string msg = uart_receive();
         if (!msg.empty()) {
             process_message(msg);
@@ -156,8 +167,8 @@ static void handle_registration() {
     // every time a player removes token, write to json
     int activeCount = 0;
      
-    while (true) {      
-        while (true) {
+    while (running) {      
+        while (running) {
             std::string input = uart_receive();
             if (input == "START") {
                 break;
@@ -223,8 +234,8 @@ static void handle_turn(int player) {
     std::cout << "Player Turn for player " << player << "\n";
 
     // Dice detection
-    // int dice_val = runDiceDetection();
-    int dice_val = 6;
+    int dice_val = runDiceDetection();
+    // int dice_val = 3;
 
 
     // Move player with dice 
@@ -239,6 +250,7 @@ static void handle_turn(int player) {
     int pos = gameState.players[player-1].location;
     if (pos < 11) {
         gameState.write("state.json");
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000*8));
         applyTileAction(player, TILE_ACTIONS[pos]);
         gameState.write("state.json");
     }
@@ -292,11 +304,16 @@ static void handle_endgame() {
 
 
 int main() {
-    if (!uart_init("/dev/ttyUSB0", B9600)) {
+    signal(SIGTERM, signal_handler);
+    signal(SIGINT, signal_handler);
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    if (!uart_init("/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0", B9600)) {
         return 1;
     }
     process_message("REGISTER\n");
     game_loop();
+    std::cout << "Shutting down cleanly...\n";
     uart_close();
+    system("pkill -x graphics_release");
     return 0;
 }

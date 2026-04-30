@@ -11,6 +11,7 @@ static int uart_fd;  // shared internally
 
 bool uart_init(const std::string& device, int baud) {
     // initialize uart stuff
+    tcflush(uart_fd, TCIFLUSH);
     uart_fd = open(device.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
     if (uart_fd < 0) {
         perror("open");

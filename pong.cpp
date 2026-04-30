@@ -333,7 +333,7 @@ int main(void)
 
     // 2. UART Initialization (Matching your example exactly)
     // Using /dev/ttyUSB0 and 9600 baud as requested
-    if (!uart_init("/dev/ttyUSB0", 9600)) {
+    if (!uart_init("/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0", 9600)) {
         // Using standard I/O since this is a basic setup
         std::cerr << "Failed to open UART on /dev/ttyUSB1" << std::endl;
         return 1;
@@ -428,19 +428,19 @@ int main(void)
             // Simple HUD for Player 1 (for basic testing)
             if (playerOne) {
                 DrawText(TextFormat("P1 Score: %d", scores[0]), 20, 20, 20, GRAY);
-                DrawText(TextFormat("P1 Boosts: %d", powerUses[0]), 20, 50, 20, GRAY);
+                DrawText(TextFormat("P1 Boosts: %d", powerUses[0]), 200, 20, 20, GRAY);
             }
             if (playerTwo) {
-                DrawText(TextFormat("P2 Score: %d", scores[0]), 20, 20, 80, GRAY);
-                DrawText(TextFormat("P2 Boosts: %d", powerUses[0]), 20, 110, 20, GRAY);
+                DrawText(TextFormat("P2 Score: %d", scores[0]), 20, 60, 20, GRAY);
+                DrawText(TextFormat("P2 Boosts: %d", powerUses[0]), 200, 60, 20, GRAY);
             }
             if (playerThree) {
-                DrawText(TextFormat("P3 Score: %d", scores[0]), 20, 20, 140, GRAY);
-                DrawText(TextFormat("P3 Boosts: %d", powerUses[0]), 20, 50, 170, GRAY);
+                DrawText(TextFormat("P3 Score: %d", scores[0]), 20, 100, 20, GRAY);
+                DrawText(TextFormat("P3 Boosts: %d", powerUses[0]), 200, 100, 20, GRAY);
             }
             if (playerFour) {
-                DrawText(TextFormat("P4 Score: %d", scores[0]), 20, 20, 200, GRAY);
-                DrawText(TextFormat("P4 Boosts: %d", powerUses[0]), 20, 50, 230, GRAY);
+                DrawText(TextFormat("P4 Score: %d", scores[0]), 20, 140, 20, GRAY);
+                DrawText(TextFormat("P4 Boosts: %d", powerUses[0]), 200, 140, 20, GRAY);
             }
         }
         else {
