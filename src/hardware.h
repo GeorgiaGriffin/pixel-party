@@ -54,7 +54,7 @@ void Joy_Read(uint8_t x_channel, uint8_t y_channel, uint16_t *x, uint16_t *y);
 uint16_t ADC_Read(uint8_t channel);
 
 // UART 
-char USART6_ReadChar(void);
-void USART6_ReadLine(char* buf, int maxlen);
+int USART6_ReadChar(void);
+bool USART6_ReadLine(char* buf, int maxlen);
 
 void USART6_SendChar(char c);

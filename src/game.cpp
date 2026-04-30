@@ -59,12 +59,13 @@ void PlayerRegistrationState::advance(GameMachine* m) {
     if (USART6->SR & USART_SR_RXNE) {
         char buf[32];
         int n;
-        USART6_ReadLine(buf, sizeof(buf));
-        
-        if (parseNext(buf, &n) && n != -1) {
-            m->currentPlayer = n;
-            printf("PLAYER:%d\r\n", n); // Sync with Pi
-            m->setState(&m->playState); // NOW move to gameplay
+        if (USART6_ReadLine(buf, sizeof(buf))) {
+            printf("MCU PARSING: %s\r\n", buf);
+            if (parseNext(buf, &n) && n != -1) {
+                m->currentPlayer = n;
+                printf("PLAYER:%d\r\n", n); // Sync with Pi
+                m->setState(&m->playState); // NOW move to gameplay
+            }
         }
     }
 }
@@ -84,10 +85,11 @@ void MinigameState::advance(GameMachine* m) {
     // 1. ALWAYS check for the STOP command first
     if (USART6->SR & USART_SR_RXNE) {
         char buf[32];
-        USART6_ReadLine(buf, sizeof(buf));
-        if (strstr(buf, "MINIGAME_STOP") != nullptr) {
-            m->setState(&m->playState);
-            return;
+        if (USART6_ReadLine(buf, sizeof(buf))) {
+            if (strstr(buf, "MINIGAME_STOP") != nullptr) {
+                m->setState(&m->playState);
+                return;
+            }
         }
     }
 
@@ -130,23 +132,23 @@ void GameplayState::advance(GameMachine* m) {
 
     char buf[32];
     int n = 0;
-    USART6_ReadLine(buf, sizeof(buf));
-
-    if (parseNext(buf, &n)) {
-        if (n == -1) {
-            printf("ENDGAME\r\n"); // Send to Pi
-            m->setState(&m->endState);
-        } else {
-            m->currentPlayer = n;
-            printf("PLAYER:%d\r\n", n); // Send to Pi
+    if (USART6_ReadLine(buf, sizeof(buf))) {
+        if (parseNext(buf, &n)) {
+            if (n == -1) {
+                printf("ENDGAME\r\n"); // Send to Pi
+                m->setState(&m->endState);
+            } else {
+                m->currentPlayer = n;
+                printf("PLAYER:%d\r\n", n); // Send to Pi
+            }
         }
-    }
-    else if (isCommand(buf, "MINIGAME")) {
-        m->setState(&m->miniState);
-    }
-    else {
-        // This catches "false_start" or other messages from Pi
-        printf("[Gameplay] Ignoring: %s\r\n", buf);
+        else if (isCommand(buf, "MINIGAME")) {
+            m->setState(&m->miniState);
+        }
+        else {
+            // This catches "false_start" or other messages from Pi
+            printf("[Gameplay] Ignoring: %s\r\n", buf);
+        }
     }
     
 }

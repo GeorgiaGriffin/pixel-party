@@ -3,6 +3,7 @@
 #include "game.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 volatile uint16_t joystick_data[8] = {0};
 volatile uint16_t button_state[5] = {0};
@@ -317,20 +318,25 @@ extern "C" { // needed to use cpp with platform io
 }
 
 
-char USART6_ReadChar(void) {
-    while (!(USART6->SR & USART_SR_RXNE));
-    return (char)USART6->DR;
+int USART6_ReadChar(void) {
+    if (!(USART6->SR & USART_SR_RXNE)) return -1;
+    return (uint8_t)USART6->DR;
 }
 
-void USART6_ReadLine(char* buf, int maxlen) {
-    int i = 0;
-    while (i < maxlen - 1) {
-        char c = USART6_ReadChar();
-        if (c == '\r' || c == '\n') {
-            if (i == 0) continue; // Skip leading newlines
-            break;
+bool USART6_ReadLine(char* buf, int maxlen) {
+    static char internal_buf[64];
+    static int pos = 0;
+
+    int c;
+    while ((c = USART6_ReadChar()) != -1) {
+        if (c == '\r') continue;
+        if (c == '\n' && pos > 0) {
+            internal_buf[pos] = '\0';
+            strncpy(buf, internal_buf, maxlen);
+            pos = 0;
+            return true;
         }
-        buf[i++] = c;
+        if (pos < 63) internal_buf[pos++] = (char)c;
     }
-    buf[i] = '\0';
+    return false;
 }
