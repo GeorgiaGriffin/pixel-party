@@ -201,11 +201,11 @@ void ParseUartInput(std::string line) {
     if (values.size() >= 12) {
         // Player 1 (Top - Horizontal) uses J1x and B1
         config.playerOneMove     = values[0]; 
-        config.playerOnePowerUp   = values[8];
+        config.playerOnePowerUp   = values[9];
 
         // Player 2 (Left - Vertical) uses J2y and B2
         config.playerTwoMove     = values[3]; 
-        config.playerTwoPowerUp   = values[9];
+        config.playerTwoPowerUp   = values[8];
 
         // Player 3 (Bottom - Horizontal) uses J3x and B3
         config.playerThreeMove   = values[4]; 
@@ -330,6 +330,14 @@ int main(void)
     playerTwo = config.playerTwo;
     playerThree = config.playerThree;
     playerFour = config.playerFour;
+    for (int i = 0; i < 4; i++)
+    {
+        scores[i] = 0;
+        powerUses[i] = 3;
+        powerActive[i] = false;
+        
+
+    }
 
     // 2. UART Initialization (Matching your example exactly)
     // Using /dev/ttyUSB0 and 9600 baud as requested
@@ -431,16 +439,16 @@ int main(void)
                 DrawText(TextFormat("P1 Boosts: %d", powerUses[0]), 200, 20, 20, GRAY);
             }
             if (playerTwo) {
-                DrawText(TextFormat("P2 Score: %d", scores[0]), 20, 60, 20, GRAY);
-                DrawText(TextFormat("P2 Boosts: %d", powerUses[0]), 200, 60, 20, GRAY);
+                DrawText(TextFormat("P2 Score: %d", scores[1]), 20, 60, 20, GRAY);
+                DrawText(TextFormat("P2 Boosts: %d", powerUses[1]), 200, 60, 20, GRAY);
             }
             if (playerThree) {
-                DrawText(TextFormat("P3 Score: %d", scores[0]), 20, 100, 20, GRAY);
-                DrawText(TextFormat("P3 Boosts: %d", powerUses[0]), 200, 100, 20, GRAY);
+                DrawText(TextFormat("P3 Score: %d", scores[2]), 20, 100, 20, GRAY);
+                DrawText(TextFormat("P3 Boosts: %d", powerUses[2]), 200, 100, 20, GRAY);
             }
             if (playerFour) {
-                DrawText(TextFormat("P4 Score: %d", scores[0]), 20, 140, 20, GRAY);
-                DrawText(TextFormat("P4 Boosts: %d", powerUses[0]), 200, 140, 20, GRAY);
+                DrawText(TextFormat("P4 Score: %d", scores[3]), 20, 140, 20, GRAY);
+                DrawText(TextFormat("P4 Boosts: %d", powerUses[3]), 200, 140, 20, GRAY);
             }
         }
         else {

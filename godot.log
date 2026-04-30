@@ -15,3 +15,35 @@ ERROR: Node not found: "MoveBackwardTile" (relative to "/root/Location").
    at: get_node (scene/main/node.cpp:1907)
    GDScript backtrace (most recent call first):
        [0] _ready (res://scripts/location.gd:120)
+here
+value found 0
+endtind
+3
+1
+1 -> MoveBackwardTile:<CharacterBody2D#489861154396>
+getting here
+2
+2 -> NormalTile3:<CharacterBody2D#489995372099>
+getting here
+value found 0
+endtind
+value found 0
+endtind
+6
+4
+4 -> NormalTile4:<CharacterBody2D#1074094147242>
+getting here
+5
+5 -> LoosePointsTile:<CharacterBody2D#1073825711787>
+getting here
+9
+7
+7 -> MinigameTile:<CharacterBody2D#1073859265979>
+getting here
+8
+8 -> MoveForwardTile:<CharacterBody2D#1073959929270>
+getting here
+11
+10
+10 -> GainPointsTile:<CharacterBody2D#1073792157360>
+getting here

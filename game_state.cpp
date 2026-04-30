@@ -88,9 +88,10 @@ static void applyTileAction(int player, const std::string& action) {
             gameState.readMini("config.json");
             std::this_thread::sleep_for(std::chrono::milliseconds(1000*1));
         }
-        // while (uart_receive() != "MINI_ENDED") {
-        uart_send("MINIGAME_STOP\n"); //Harini
-        // }
+        while (uart_receive() != "MINI_ENDED") {
+            uart_send("MINIGAME_STOP\n"); //Harini
+            std::this_thread::sleep_for(std::chrono::milliseconds(70));
+        }
         
         std::cout << "can tell it needs to end the game\n";
 
@@ -234,8 +235,8 @@ static void handle_turn(int player) {
     std::cout << "Player Turn for player " << player << "\n";
 
     // Dice detection
-    int dice_val = runDiceDetection();
-    // int dice_val = 3;
+    // int dice_val = runDiceDetection();
+    int dice_val = 3;
 
 
     // Move player with dice 
