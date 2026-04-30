@@ -2,6 +2,10 @@ Godot Engine v4.5.1.stable.official.f62fdbde1 - https://godotengine.org
 Vulkan 1.3.305 - Forward+ - Using Device #0: Unknown - V3D 7.1.7.0
 WARNING: Platform supports less than 48 textures per stage which is less than required by the Clustered renderer. Defaulting to Mobile renderer.
      at: RendererCompositorRD (servers/rendering/renderer_rd/renderer_compositor_rd.cpp:333)
+ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN
+   at: init_output_device (drivers/alsa/audio_driver_alsa.cpp:90)
+WARNING: All audio drivers failed, falling back to the dummy driver.
+     at: initialize (servers/audio_server.cpp:244)
 
 ERROR: Node not found: "Timer2" (relative to "/root/Location").
    at: get_node (scene/main/node.cpp:1907)
@@ -15,35 +19,3 @@ ERROR: Node not found: "MoveBackwardTile" (relative to "/root/Location").
    at: get_node (scene/main/node.cpp:1907)
    GDScript backtrace (most recent call first):
        [0] _ready (res://scripts/location.gd:120)
-here
-value found 0
-endtind
-3
-1
-1 -> MoveBackwardTile:<CharacterBody2D#489861154396>
-getting here
-2
-2 -> NormalTile3:<CharacterBody2D#489995372099>
-getting here
-value found 0
-endtind
-value found 0
-endtind
-6
-4
-4 -> NormalTile4:<CharacterBody2D#1074094147242>
-getting here
-5
-5 -> LoosePointsTile:<CharacterBody2D#1073825711787>
-getting here
-9
-7
-7 -> MinigameTile:<CharacterBody2D#1073859265979>
-getting here
-8
-8 -> MoveForwardTile:<CharacterBody2D#1073959929270>
-getting here
-11
-10
-10 -> GainPointsTile:<CharacterBody2D#1073792157360>
-getting here

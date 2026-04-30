@@ -235,8 +235,8 @@ static void handle_turn(int player) {
     std::cout << "Player Turn for player " << player << "\n";
 
     // Dice detection
-    // int dice_val = runDiceDetection();
-    int dice_val = 3;
+    int dice_val = runDiceDetection();
+    // int dice_val = 3;
 
 
     // Move player with dice 
