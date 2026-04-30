@@ -87,6 +87,7 @@ void MinigameState::advance(GameMachine* m) {
         char buf[32];
         if (USART6_ReadLine(buf, sizeof(buf))) {
             if (strstr(buf, "MINIGAME_STOP") != nullptr) {
+                printf("MINI_ENDED\r\n");
                 m->setState(&m->playState);
                 return;
             }
@@ -113,7 +114,7 @@ void MinigameState::advance(GameMachine* m) {
         }
 
         // Send data only once every 50ms
-        printf("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+        printf("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
             m->last_joystick[0], m->last_joystick[1], m->last_joystick[2], m->last_joystick[3], 
             m->last_joystick[4], m->last_joystick[5], m->last_joystick[6], m->last_joystick[7],
             m->last_buttons[1], m->last_buttons[2], m->last_buttons[3], m->last_buttons[4]);
